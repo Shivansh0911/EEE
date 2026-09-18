@@ -57,6 +57,57 @@ the same thing.
 The ANN is being written with `n_out` as a config value and the targets as a config
 list, so whichever answer comes back changes one line, not the architecture.
 
+### D3 (continued) — `Rc_mm` shipped as a PLACEHOLDER second output
+
+**Decision.** P4 needed a concrete second target to build and test the multi-output
+machinery against. The one implemented is
+
+```
+Rc_mm = sqrt(C) * r_w / sin(theta_cone_deg)        eqs (2) and (4)
+```
+
+the radius of curvature of the spherical cathode cap. It is added as a column by
+`src/data/build_master.py` and flagged in `derived_fields`. **This is a
+placeholder under reading C, not an answer to D3.** The supervisor still has to
+confirm which reading is intended.
+
+**Why this one.** The default is meant to be reading B, the beam-envelope
+convergence half-angle at the anode. Reading B is computed by equation (II) of
+the physics model, and equation (II) is behind the failed gate (D4) — so
+defaulting to B today would mean training against a target carrying 5.75 % of its
+own error, which is the same mistake as generating Tier B. `Rc_mm` is instead
+*exactly* derivable from quantities already in Table 2, with no physics engine
+involved and no error introduced. It is the only candidate second output
+available at zero epistemic cost while the gate is down.
+
+**The honest limitation, stated plainly.** `Rc_mm` is a deterministic function of
+the three inputs and θ:
+
+```
+Rc_mm = f(C, r_w, theta)
+```
+
+and θ is output one. So the second output carries **no independent information**.
+It exercises the multi-output residual vector, the `(N·n_out) × 26` Jacobian, the
+per-output residual weights and the two-column scaler — all of which are real and
+tested — but it cannot teach the network anything the first output does not
+already contain, and a good score on it is not independent evidence of anything.
+It must not be presented as a second physical prediction in the write-up.
+
+Measured cost of carrying it: the same 26 parameters now serve two outputs instead
+of one, and θ accuracy is worse for it. See `reports/BENCHMARK.md`.
+
+**Switching readings** is `DEFAULT_TARGETS` in `src/ann/config.py`, plus the
+column existing in the dataset. Reading A means `targets=["theta_cone_deg"]` and
+n_out drops to 1 (24 parameters). Reading B becomes available the moment the D4
+gate passes.
+
+**Note on naming.** `rc_mm` (lower case) already existed and is the cathode *disc*
+radius `r_c = sqrt(C)·r_w`. `Rc_mm` (upper case) is the *radius of curvature*,
+larger by `1/sin θ`. Different quantities; the case distinction is the standard
+one in the gun-synthesis literature, but they are easy to confuse and should not
+be read past quickly.
+
 ---
 
 ## D4 — The physics gate was enforced, and it failed

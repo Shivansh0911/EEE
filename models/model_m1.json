@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "architecture": [
+    3,
+    3,
+    2,
+    2
+  ],
+  "activation": "tanh",
+  "output_activation": "tanh",
+  "weights": {
+    "W1": [
+      [
+        0.9421051503294482,
+        -0.36087042335297415,
+        -1.0393407687633796
+      ],
+      [
+        -0.4393448165297873,
+        5.820690182384881,
+        0.43351453559737624
+      ],
+      [
+        4.328341359649643,
+        0.6285187997491098,
+        1.0688392065643557
+      ]
+    ],
+    "b1": [
+      1.6120555518874455,
+      5.832876472390954,
+      -1.746767097885968
+    ],
+    "W2": [
+      [
+        -0.35728808627920156,
+        1.5052921182235628
+      ],
+      [
+        -0.42680174210215793,
+        9.984949893301449
+      ],
+      [
+        2.762745804762463,
+        6.686844684464659
+      ]
+    ],
+    "b2": [
+      3.071943189989285,
+      -3.2400129973567995
+    ],
+    "W3": [
+      [
+        -7.231160084714279,
+        2.657013748659727
+      ],
+      [
+        0.7618500654008035,
+        7.725273790940114
+      ]
+    ],
+    "b3": [
+      2.4611550970618445,
+      5.36870005721773
+    ]
+  },
+  "scaler": {
+    "x_min": [
+      0.3,
+      0.51,
+      5.12
+    ],
+    "x_max": [
+      3.67,
+      4.42,
+      306.3
+    ],
+    "y_min": [
+      9.8,
+      9.5065
+    ],
+    "y_max": [
+      70.0,
+      44.3917
+    ],
+    "note": "fitted on training rows only"
+  },
+  "inputs": [
+    "perveance_uperv",
+    "rw_mm",
+    "C"
+  ],
+  "targets": [
+    "theta_cone_deg",
+    "Rc_mm"
+  ],
+  "training_envelope": {
+    "perveance_uperv": [
+      0.3,
+      3.67
+    ],
+    "rw_mm": [
+      0.51,
+      4.42
+    ],
+    "C": [
+      5.12,
+      306.3
+    ]
+  },
+  "target_envelope": {
+    "theta_cone_deg": [
+      9.8,
+      70.0
+    ],
+    "Rc_mm": [
+      9.5065,
+      44.3917
+    ]
+  },
+  "residual_weights": [
+    1.0,
+    1.0
+  ],
+  "metrics": {
+    "train_mre_pct": {
+      "theta_cone_deg": 4.3081463296009215,
+      "Rc_mm": 3.117304997475268
+    },
+    "test_mre_pct": {
+      "theta_cone_deg": 17.266079978316004,
+      "Rc_mm": 8.326076663092618
+    },
+    "test_rmse": {
+      "theta_cone_deg": 11.930201170276709,
+      "Rc_mm": 1.810150353135393
+    },
+    "test_pearson_r": {
+      "theta_cone_deg": 0.7132791804600472,
+      "Rc_mm": 0.9689929699259017
+    }
+  },
+  "provenance": {
+    "model_id": "M1",
+    "trained_at": "2026-09-18T06:08:54+05:30",
+    "n_train": 23,
+    "n_test": 7,
+    "tier_a_rows": 30,
+    "tier_b_rows": 0,
+    "tier_c_rows": 0,
+    "split": "paper's own 23/7 (Table 2 asterisked cases as test)",
+    "seed": 100,
+    "restarts": 10,
+    "dataset": "data/processed/dataset_master.csv",
+    "notes": "second target Rc_mm is a PLACEHOLDER under reading C of D3 and is a deterministic function of the inputs and theta",
+    "exported_at": "2026-09-18T06:08:54+05:30"
+  }
+}
