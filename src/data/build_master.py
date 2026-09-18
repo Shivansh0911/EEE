@@ -6,8 +6,11 @@ dataset_literature.csv. It reads that file as-is and adds derived target
 columns, so the verified extraction (D1) stays the single source of truth and
 the git diff for this phase is exactly "one new column".
 
-When Tier B is eventually unblocked (D4), its rows are appended here, not in
-build_tier_a.py. Today Tier B contributes zero rows.
+Tier B rows are appended here, not in build_tier_a.py, so the verified Tier A
+extraction is never rewritten. Tier B exists as of D9 and is restricted to the
+C >= 8 envelope where the generator was validated; if data/processed/
+dataset_tier_b.csv is absent, the master file is simply Tier A and everything
+downstream still works.
 
 Derived column added
 --------------------
@@ -33,7 +36,18 @@ import math
 import os
 
 SRC_NAME = "dataset_literature.csv"
+TIER_B_NAME = "dataset_tier_b.csv"
 OUT_NAME = "dataset_master.csv"
+
+# Columns Tier B introduces. Tier A rows carry explicit values for them rather
+# than blanks, so "no generator was involved" is stated rather than inferred
+# from an empty cell.
+TIER_B_COLUMNS = {
+    "split": "",
+    "theta_source": "experiment",
+    "generator_mre_pct": "",
+    "generator_envelope": "",
+}
 
 # Derived targets this script appends, in output order.
 DERIVED_COLUMNS = ["Rc_mm"]
@@ -69,6 +83,16 @@ def build(rows):
     return out
 
 
+def load_tier_b(root):
+    """Tier B rows, if they have been generated. Absent is not an error."""
+    path = os.path.join(root, "data", "processed", TIER_B_NAME)
+    if not os.path.exists(path):
+        return [], []
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        return list(reader.fieldnames), list(reader)
+
+
 def main():
     root = repo_root()
     src = os.path.join(root, "data", "processed", SRC_NAME)
@@ -90,16 +114,44 @@ def main():
     anchor = out_fields.index("rc_mm") + 1
     for i, name in enumerate(DERIVED_COLUMNS):
         out_fields.insert(anchor + i, name)
+    for name in TIER_B_COLUMNS:
+        if name not in out_fields:
+            out_fields.append(name)
+
+    # Tier A: split mirrors the paper's own division.
+    for r in out_rows:
+        for name, default in TIER_B_COLUMNS.items():
+            r.setdefault(name, default)
+        r["split"] = r["paper_split"]
+
+    tb_fields, tb_rows = load_tier_b(root)
+    for r in tb_rows:
+        assert r["tier"] == "B_synthetic", "non-synthetic row in the Tier B file"
+        assert float(r["C"]) >= 8.0, "Tier B row below the validated C floor"
+        assert r["split"] == "train", "a synthetic row is marked as a test row"
+        # Any column the master has and Tier B does not is left blank rather
+        # than invented.
+        out_rows.append({k: r.get(k, "") for k in out_fields})
+
+    for name in tb_fields:
+        if name not in out_fields:
+            raise AssertionError(f"Tier B column {name!r} has nowhere to go in the "
+                                 f"master schema; update TIER_B_COLUMNS")
 
     with open(dst, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=out_fields)
         w.writeheader()
         w.writerows(out_rows)
 
-    n_test = sum(1 for r in out_rows if r["paper_split"] == "test")
+    n_a = sum(1 for r in out_rows if r["tier"] == "A_literature")
+    n_b = sum(1 for r in out_rows if r["tier"] == "B_synthetic")
+    n_test = sum(1 for r in out_rows if r["split"] == "test")
+    n_train = sum(1 for r in out_rows if r["split"] == "train")
     print(f"Master dataset written: {len(out_rows)} rows "
-          f"(Tier A {len(out_rows)}, Tier B 0, Tier C 0)")
-    print(f"  paper split: {len(out_rows) - n_test} train / {n_test} test")
+          f"(Tier A {n_a}, Tier B {n_b}, Tier C 0)")
+    print(f"  split: {n_train} train / {n_test} test")
+    print(f"  every test row is real: "
+          f"{all(r['tier'] == 'A_literature' for r in out_rows if r['split'] == 'test')}")
     print(f"  derived targets added: {', '.join(DERIVED_COLUMNS)}")
     print(f"  {dst}")
 

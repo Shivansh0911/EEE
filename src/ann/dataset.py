@@ -10,8 +10,13 @@ the kind of mistake that produces a better-looking number:
     row looks entirely right sitting in the CSV -- this filter is the only thing
     that catches it.
 2.  Tier B and Tier C rows may be TRAINED on but never TESTED on. Testing a
-    surrogate against its own generator's output proves nothing. Today this is
-    moot: Tier B has zero rows because the physics gate failed (D4).
+    surrogate against its own generator's output proves nothing.
+
+3.  A model that is supposed to be trained on real guns only must SAY SO, not
+    rely on a filter elsewhere happening to exclude synthetic rows. Since D9 the
+    master file holds 1030 rows, 1000 of them synthetic, and every one of them
+    is `beam_type = pencil` -- so the pencil filter no longer separates them.
+    `literature_only()` is the explicit selector, and M1 uses it.
 """
 
 import os
@@ -46,6 +51,41 @@ def load(path=None, cfg=None):
     return df
 
 
+def literature_only(df):
+    """
+    Tier A rows and nothing else.
+
+    M1 is defined as "trained on real guns", and that has to be enforced by a
+    named call rather than by the absence of synthetic rows in the file. Before
+    D9 the two were the same thing; they are not any more.
+    """
+    return df[df["tier"] == LITERATURE_TIER].reset_index(drop=True)
+
+
+def synthetic_only(df):
+    return df[df["tier"] == "B_synthetic"].reset_index(drop=True)
+
+
+def train_test_frames(df, include_synthetic):
+    """
+    The split every model is built from.
+
+    `split` is train/test for Tier A and always train for Tier B, so the test
+    frame is real guns by construction. That is asserted here rather than
+    assumed, because it is the single property the M1-vs-M3 comparison rests on.
+    """
+    train = df[df["split"] == "train"]
+    if not include_synthetic:
+        train = train[train["tier"] == LITERATURE_TIER]
+    test = df[df["split"] == "test"]
+
+    assert (test["tier"] == LITERATURE_TIER).all(), (
+        "a non-literature row reached the test split; a surrogate must never be "
+        "scored against its own generator's output"
+    )
+    return train.reset_index(drop=True), test.reset_index(drop=True)
+
+
 def paper_split(df):
     """
     The paper's own 23/7 split: the seven cases printed with an asterisk in
@@ -55,8 +95,9 @@ def paper_split(df):
     comparable to the paper's reported numbers, and with 30 rows the 15 % pieces
     are four rows each, which is noise rather than a validation set.
     """
-    train = df[df["paper_split"] == "train"].reset_index(drop=True)
-    test = df[df["paper_split"] == "test"].reset_index(drop=True)
+    lit = literature_only(df)
+    train = lit[lit["paper_split"] == "train"].reset_index(drop=True)
+    test = lit[lit["paper_split"] == "test"].reset_index(drop=True)
     assert len(train) == 23 and len(test) == 7, (
         f"expected the paper's 23/7 split, got {len(train)}/{len(test)}"
     )

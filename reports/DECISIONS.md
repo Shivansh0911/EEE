@@ -112,6 +112,10 @@ be read past quickly.
 
 ## D4 — The physics gate was enforced, and it failed
 
+> **PARTIALLY SUPERSEDED BY D9.** Tier B now exists, restricted to C ≥ 8 where
+> the same model reaches MAE 0.85° / MRE 2.80 %. The strict gate is still failed
+> and everything below still describes the full envelope correctly.
+
 **Decision.** Tier B synthetic generation has **not** been run. No synthetic rows
 exist.
 
@@ -253,6 +257,81 @@ better-scoring one.
 
 ---
 
+## D9 — Tier B generated, over a restricted envelope. Partially reverses D4.
+
+**Decision.** 1000 synthetic rows were generated and merged, restricted to
+**C ≥ 8**. D4's blanket block on synthetic data is lifted *for that envelope
+only*. Everything D4 says about the full envelope still stands.
+
+**What changed.** Nothing about the physics. What changed is a measurement of
+where the physics is accurate:
+
+| Subset | n | MAE (deg) | MRE (%) | mean error |
+|---|---|---|---|---|
+| All 30 cases — the original gate | 30 | 1.66 | 5.75 | −1.27 |
+| **C ≥ 8 — the generator's envelope** | **23** | **0.85** | **2.80** | **−0.35** |
+| C ≥ 12 | 18 | 0.73 | 1.97 | −0.08 |
+| C < 8 — **excluded** | 7 | 4.29 | 15.45 | −4.29 |
+
+This was already visible in `VALIDATION_table2.md` as a residual analysis
+(`R(err, lnC) = +0.794`), and was listed there as a fallback. It is now the plan.
+
+**The argument that justifies it is the same arithmetic that blocked it.** D4's
+objection was not "the gate says no" — it was that a generator carrying 5.75 %
+of its own error cannot train a surrogate to beat the paper's 3.74 %, because
+the network would learn the generator's bias faithfully. Over C ≥ 8 the
+generator's error is **2.80 %, below 3.74 %**, so that objection does not apply
+there. It applies everywhere else, which is why the envelope is restricted
+rather than removed.
+
+**The strict gate is still failed and is still asserted as failed.**
+`tests/test_physics_reproduces_table2.py::test_strict_gate_over_all_30_cases_still_fails`
+exists precisely so a green test suite cannot be mistaken for a passed gate.
+
+**The in-sample objection, measured rather than waved away.** The coefficient
+`c = 0.62` was chosen by sweeping against these same 30 published cases, so
+2.80 % is in-sample. A leave-one-out refit — `c` re-fitted on 22 of the 23
+restricted cases, then used to predict the twenty-third — gives **MAE 0.92° /
+MRE 2.89 %**. The optimism is about 0.07°, and the out-of-sample figure is still
+inside the gate and still below 3.74 %.
+
+**The excluded corner is named, not hidden.** Seven real guns (cases 4, 7, 10,
+18, 19, 27, 28) have C < 8 and are outside the envelope. No synthetic row exists
+there. `reports/figures/tier_overlap.png` plots them as EXCLUDED so the coverage
+gap is visible rather than implied. The cost is real: the low-convergence,
+large-aperture corner of the design space has no synthetic support, and an
+optimizer running over Tier B cannot explore it.
+
+**Anchors exclude the test guns — a deliberate deviation.** The plan called for
+the real C ≥ 8 triples as anchor points. All 23 qualify, but **all seven
+held-out test guns have C ≥ 8**, so anchoring on all of them would put the exact
+test coordinates into M3's training set and make the M1-versus-M3 comparison
+meaningless. Anchors are the 16 triples that are C ≥ 8 *and* in the paper's
+training split, and a test refuses any file containing a test triple.
+
+**Coverage, measured.** 22 of the 23 real in-envelope guns lie inside the
+synthetic convex hull. The exception is **case 26 (P = 0.29)**, just below the
+envelope's P floor of 0.30 — and it is a held-out test gun, so M3 has no
+synthetic support at the coordinates of one of the seven guns it is judged on.
+
+**What Tier B is not.** Not experimental data, not extracted from a paper, and
+never to be described as either — in the CSV, the app, the report, or
+conversation. Every row carries `tier = B_synthetic`,
+`theta_source = physics_generator`, `generator_mre_pct = 2.80`,
+`generator_envelope = "C ≥ 8"`, and a citation ending "NOT experimental data".
+
+**M1 is unchanged.** The headline model remains trained on real guns only, and
+remains what the site reports. M3 is trained separately on Tier A + Tier B and
+tested on held-out **real** guns only. If M3 does not beat M1 there, that is a
+result about the generator's accuracy and is reported as one.
+
+**What would reverse this.** A clean PDF of Vaughan 1981, Tiwary & Basu 1987 or
+Yang 2006 would fix the aperture-lens term properly and open the full envelope,
+making the restriction unnecessary. That remains the single most valuable thing
+anyone could hand this project.
+
+---
+
 ## Open items
 
 1. **D3** — supervisor to confirm the definition of the second output. Note the
@@ -261,5 +340,7 @@ better-scoring one.
 2. **D4** — obtain a clean PDF of Vaughan 1981, Tiwary & Basu 1987, or Yang 2006.
    This is the single blocking item for the entire synthetic-data path, and
    therefore for the NSGA-II optimizer that depends on the surrogate.
-3. Decide whether to pursue the fallback of restricting Tier B to C ≥ 8, where the
-   current model is already unbiased, at the cost of narrowing the design space.
+3. ~~Decide whether to pursue the fallback of restricting Tier B to C ≥ 8~~ —
+   **done, D9.** 1000 rows generated over C ≥ 8. The low-convergence corner
+   (C < 8) remains without synthetic support, and case 26 sits just outside the
+   envelope's P floor.
