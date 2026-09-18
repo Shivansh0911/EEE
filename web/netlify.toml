@@ -1,0 +1,31 @@
+# Netlify config for a site with no build step.
+#
+# publish = "." means "serve this folder exactly as it is". There is no build
+# command because there is nothing to build: the page is plain HTML, CSS and
+# classic scripts, and the data files are generated in the repo by
+# `python -m src.export.site_data` and committed.
+#
+# If you drag-and-drop this folder onto https://app.netlify.com/drop, Netlify
+# does not read this file at all -- drag-and-drop just publishes what it is
+# given. This file matters when the site is connected to the git repository,
+# where "base" tells Netlify to treat web/ as the site root.
+
+[build]
+  base = "web"
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # The page makes no network requests of any kind, so it can afford a strict
+    # policy. 'unsafe-inline' covers the inline SVG favicon and the small inline
+    # style attributes in the markup; there is no inline <script>.
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
