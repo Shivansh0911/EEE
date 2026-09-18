@@ -85,6 +85,16 @@ generator's accuracy and envelope in its own columns. See D4 and D9 in
 **1030 rows: 30 real guns, 1000 physics-model outputs.** Nobody should read this
 dataset and come away thinking there are a thousand measurements.
 
+**And it did not help.** M3, trained on those 1000 synthetic rows, scores
+**9.77 %** on the seven real held-out guns against **7.93 %** for M1 trained on
+real data alone. The generator reproduces the classical *iterative method* to
+2.80 %, but that method is itself 9.71 % from measurement — so against the
+quantity the network must predict, the generator carries 10.48 %, and M3
+inherited the bias. D4's original arithmetic objection turns out to have been
+right; the 2.80 %-versus-3.74 % comparison that lifted it compared errors
+measured against different references. See `reports/BENCHMARK.md` §11 and the
+outcome block on D9. **M1 remains the headline model.**
+
 ---
 
 ## Architecture — why prediction does not touch the backend

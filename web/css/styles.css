@@ -384,6 +384,10 @@ table.plain td, table.plain th { white-space: normal; }
 }
 .pill.test { border-color: #4a5f3f; color: #9fd08a; }
 .pill.train { border-color: var(--line); color: var(--ink-3); }
+/* Real vs generated is the most important distinction in the table, so it gets
+   the accent and a word, never colour alone. */
+.pill.real { border-color: #7a4a2a; color: #f0a877; font-weight: 600; }
+.pill.synth { border-color: var(--line); color: var(--ink-3); }
 
 .filters {
   display: flex; flex-wrap: wrap; gap: 10px; align-items: center;

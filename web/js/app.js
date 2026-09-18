@@ -292,9 +292,15 @@
 
   /* --------------------------------------------------------------- dataset */
 
+  // With 1030 rows the table is capped so the page stays responsive; the cap is
+  // stated rather than silently applied, and filtering narrows below it.
+  var DS_RENDER_LIMIT = 300;
+
   var DS_COLS = [
+    { k: "tier", t: "Tier", tier: true },
+    { k: "theta_source", t: "θ from" },
     { k: "source_case_id", t: "Case", num: true },
-    { k: "paper_split", t: "Split", pill: true },
+    { k: "split", t: "Split", pill: true },
     { k: "perveance_uperv", t: "P (µperv)", num: true, dp: 2 },
     { k: "rw_mm", t: "r_w (mm)", num: true, dp: 2 },
     { k: "C", t: "C", num: true, dp: 2 },
@@ -306,6 +312,8 @@
     { k: "rc_mm", t: "r_c (mm)", num: true, dp: 3 },
     { k: "Rc_mm", t: "R_c (mm)", num: true, dp: 3 },
     { k: "beam_type", t: "Beam" },
+    { k: "generator_mre_pct", t: "Generator MRE %", num: true, dp: 2 },
+    { k: "generator_envelope", t: "Generator envelope" },
     { k: "source_table", t: "Table" },
     { k: "origin_refs", t: "Upstream refs" },
     { k: "source_doi", t: "DOI", doi: true },
@@ -316,8 +324,10 @@
   function dsRender() {
     var q = ($("ds-search").value || "").toLowerCase().trim();
     var split = $("ds-split").value;
+    var tier = $("ds-tier").value;
     var rows = DATASET.rows.filter(function (r) {
-      if (split && r.paper_split !== split) return false;
+      if (tier && r.tier !== tier) return false;
+      if (split && r.split !== split) return false;
       if (!q) return true;
       return DS_COLS.some(function (c) {
         return String(r[c.k]).toLowerCase().indexOf(q) >= 0;
@@ -337,9 +347,16 @@
       return '<th data-k="' + c.k + '" scope="col">' + esc(c.t) + arrow + "</th>";
     }).join("");
 
-    $("ds-body").innerHTML = rows.map(function (r) {
+    var shown = rows.slice(0, DS_RENDER_LIMIT);
+    $("ds-body").innerHTML = shown.map(function (r) {
       return "<tr>" + DS_COLS.map(function (c) {
         var v = r[c.k];
+        if (v === null || v === undefined || v === "") return '<td class="muted">—</td>';
+        if (c.tier) {
+          var real = v === "A_literature";
+          return '<td><span class="pill ' + (real ? "real" : "synth") + '">' +
+                 (real ? "real" : "generated") + "</span></td>";
+        }
         if (c.doi) {
           return '<td><a href="https://doi.org/' + esc(v) + '" target="_blank" ' +
                  'rel="noopener">' + esc(v) + "</a></td>";
@@ -355,7 +372,14 @@
       }).join("") + "</tr>";
     }).join("");
 
-    $("ds-count").textContent = rows.length + " of " + DATASET.rows.length + " rows";
+    var nReal = rows.filter(function (r) { return r.tier === "A_literature"; }).length;
+    $("ds-count").innerHTML =
+      rows.length + " of " + DATASET.rows.length + " rows — <strong>" + nReal +
+      " real</strong>, " + (rows.length - nReal) + " generated" +
+      (rows.length > DS_RENDER_LIMIT
+        ? ' <span class="muted">(showing the first ' + DS_RENDER_LIMIT +
+          "; filter to narrow)</span>"
+        : "");
 
     Array.prototype.forEach.call($("ds-head").children, function (th) {
       th.addEventListener("click", function () {
@@ -368,24 +392,43 @@
 
   function initDataset() {
     var p = DATASET.provenance;
+    var g = p.generator || {};
+    var rv = p.real_vs_generated || {};
+
+    $("ds-lede").innerHTML =
+      "This dataset mixes two very different kinds of row, and the difference " +
+      "matters more than the total. <strong>" + rv.real + " rows describe guns " +
+      "that were actually built and measured.</strong> The other " +
+      rv.generated + " are output from a physics model, computed at design " +
+      "points nobody has published a gun for.";
+
+    // The one statement a visitor must not be able to miss.
+    $("ds-headline").innerHTML =
+      '<span class="tag">read this</span><div><strong>' + esc(p.headline) +
+      "</strong><br>" + esc(rv.plain_language) + "</div>";
+
     $("ds-stats").innerHTML = [
-      [DATASET.n_rows, "real guns"],
-      [p.source_papers.length, "source paper"],
-      [p.upstream_references, "upstream references"],
-      [p.tier_b_rows, "synthetic rows"],
-      [p.split.train + " / " + p.split.test, "train / test split"],
-      [p.beam_types.join(", "), "beam type, all rows"],
+      [p.tier_a_rows, "real guns (Tier A)", true],
+      [p.tier_b_rows, "physics-generated (Tier B)", false],
+      [g.mre_pct_vs_experiment != null ? g.mre_pct_vs_experiment + " %" : "—",
+       "generator error vs measurement", false],
+      [g.envelope || "—", "generator envelope", false],
+      [p.split.test, "test rows — all real", true],
+      [p.tier_c_rows, "simulation rows (Tier C)", false],
     ].map(function (s) {
-      return '<div class="stat"><div class="n">' + esc(s[0]) +
+      return '<div class="stat"><div class="n"' +
+             (s[2] ? ' style="color:var(--accent)"' : "") + ">" + esc(s[0]) +
              '</div><div class="l">' + esc(s[1]) + "</div></div>";
     }).join("");
 
     $("ds-provenance").innerHTML =
-      '<p class="note">All 30 rows come from Table 2 of Panahi et al. (2025), ' +
-      "extracted programmatically from the PDF rather than typed — transcribing a " +
-      "30×9 numeric table by hand is exactly where silent corruption enters. The " +
-      "seven asterisked test cases independently reproduce the paper's own stated " +
-      "23 / 7 split, which is the check that the extraction was read correctly.</p>" +
+      "<h3 style='margin-top:0'>Tier A — the " + p.tier_a_rows + " real guns</h3>" +
+      '<p class="note">All ' + p.tier_a_rows + " come from Table 2 of Panahi et " +
+      "al. (2025), extracted programmatically from the PDF rather than typed — " +
+      "transcribing a 30×9 numeric table by hand is exactly where silent " +
+      "corruption enters. The seven asterisked test cases independently " +
+      "reproduce the paper's own stated 23 / 7 split, which is the check that " +
+      "the extraction was read correctly.</p>" +
       '<p class="note">The measurements originate further upstream, and each row ' +
       "records which: cases 1, 2, 9, 12, 25 and 29 from Frost, Purl &amp; Johnson " +
       "(1962), Tiwary &amp; Basu (1987) and Yang, Jia &amp; Zhu (2006); the rest " +
@@ -394,18 +437,51 @@
       "al., rather than being triple-counted as four sources.</p>" +
       msg("warn", "correction", "<strong>We found an error in our own working " +
         "sheet.</strong> " + esc(p.correction_note)) +
-      msg("info", "no synthetic data", esc(p.tier_b_note)) +
+
+      "<h3>Tier B — the " + p.tier_b_rows + " generated rows</h3>" +
+      '<p class="note"><strong>These are not measurements.</strong> They are the ' +
+      "classical Pierce synthesis equations, solved at " + p.tier_b_rows +
+      " new design points. Evaluating a validated model at new points is a " +
+      "standard way to make training data — but no gun described by these rows " +
+      "has ever been built, and nothing here should be read as though one had " +
+      "been.</p>" +
+      '<p class="note">' + esc(g.plain_language || "") + "</p>" +
+      msg("bad", "what that 2.80 % does not mean",
+        "The 2.80 % above is how closely the model reproduces the classical " +
+        "<em>iterative method</em> — not measurement. That method is itself about " +
+        "<strong>9.7 % away from the measured angles</strong>, so against what the " +
+        "network actually has to predict the generator carries about " +
+        "<strong>10.5 %</strong>. A model trained on these rows (M3) scored " +
+        "<strong>9.77 %</strong> on real held-out guns, against <strong>7.93 %</strong> " +
+        "for the same model trained on real data alone. Synthetic data made it " +
+        "worse. See the Results tab.") +
+      '<p class="note">Rules these rows obey: every one is <code>split = train</code>, ' +
+      "so no synthetic row is ever scored against; none sits at the coordinates of " +
+      "a held-out test gun; and each carries its generator's error and envelope in " +
+      "its own columns, so you can read them off any row in the table below.</p>" +
+      '<p class="note">Seven real guns have C &lt; 8 and fall outside the ' +
+      "generator's validated envelope. <strong>They have no synthetic support at " +
+      "all</strong> — that corner of the design space is simply missing, and the " +
+      "coverage figure on the Results tab plots it as excluded rather than " +
+      "cropping it out.</p>" +
       '<p class="note">' + esc(p.derived_note) + "</p>";
 
+    $("ds-table-heading").textContent =
+      "All " + DATASET.n_rows + " rows — " + p.tier_a_rows + " real, " +
+      p.tier_b_rows + " generated";
+
     $("ds-footnote").innerHTML =
-      "Every column above is read from the paper except r_c and R_c, which are " +
-      "exact algebra from eqs (2) and (4) and are flagged as derived in the CSV. " +
-      "Click a column heading to sort. The underlying file is " +
-      "<code>data/processed/dataset_master.csv</code>, mirrored here as " +
+      "The <strong>Tier</strong> column says which kind of row you are looking " +
+      "at, and <strong>θ from</strong> says where its angle came from — a " +
+      "measurement or the generator. Click a column heading to sort. Every " +
+      "column is read from the paper except r_c, R_c and the generated rows " +
+      "themselves, all flagged in <code>derived_fields</code>. The underlying " +
+      "file is <code>data/processed/dataset_master.csv</code>, mirrored here as " +
       "<code>data/dataset.json</code>.";
 
     $("ds-search").addEventListener("input", dsRender);
     $("ds-split").addEventListener("change", dsRender);
+    $("ds-tier").addEventListener("change", dsRender);
     dsRender();
   }
 
@@ -498,6 +574,51 @@
       fmt(paper.test_rmse_deg, 2) + '</td><td class="num">' +
       fmt(paper.test_pearson_r, 3) + "</td></tr>" +
       rowsFor("M1") + rowsFor("M1-multi") + "</tbody>";
+
+    /* M3: did synthetic data help? */
+    var m3 = BENCH["M3"], m1 = BENCH["M1"];
+    if (m3 && m1) {
+      var s1 = m1.metrics.selected, s3 = m3.metrics.selected;
+      var t1 = m1.targets[0], t3 = m3.targets[0];
+      var r1 = m1.restart_spread || {}, r3 = m3.restart_spread || {};
+      $("m3-body").innerHTML =
+        '<p class="note"><strong>No — it made the model worse, and the reason is ' +
+        "worth more than the result.</strong> M3 was trained on the 23 real guns " +
+        "plus " + (m3.n_synthetic_train || 1000) + " physics-generated rows, and " +
+        "tested on the same seven real held-out guns. It was never tested on " +
+        "synthetic rows.</p>" +
+        '<div class="table-scroll"><table class="plain"><thead><tr>' +
+        "<th>Model</th><th>Trained on</th><th>Train MRE</th>" +
+        "<th>Test MRE (real guns)</th><th>Restart spread</th></tr></thead><tbody>" +
+        "<tr><td><strong>M1</strong></td><td>23 real guns</td>" +
+        '<td class="num">' + fmt(s1.train_mre_pct[t1], 2) + ' %</td>' +
+        '<td class="num"><strong>' + fmt(s1.test_mre_pct[t1], 2) + " %</strong></td>" +
+        '<td class="num">' + fmt(r1.test_mre_min, 2) + "–" + fmt(r1.test_mre_max, 2) +
+        " %</td></tr>" +
+        "<tr><td><strong>M3</strong></td><td>23 real + " +
+        (m3.n_synthetic_train || 1000) + " synthetic</td>" +
+        '<td class="num">' + fmt(s3.train_mre_pct[t3], 2) + ' %</td>' +
+        '<td class="num"><strong>' + fmt(s3.test_mre_pct[t3], 2) + " %</strong></td>" +
+        '<td class="num">' + fmt(r3.test_mre_min, 2) + "–" + fmt(r3.test_mre_max, 2) +
+        " %</td></tr></tbody></table></div>" +
+        '<p class="note">The extra data did what more data should do: M3 fits its ' +
+        "training set almost perfectly (0.91 %) and its run-to-run spread " +
+        "collapses. It converged confidently on the wrong answer.</p>" +
+        '<p class="note"><strong>The generator was validated against the wrong ' +
+        "target.</strong> Our physics reproduces the classical <em>iterative " +
+        "method</em> to 2.80 % over its envelope — but that method is itself " +
+        "9.71 % away from the measured angles. So against the quantity the " +
+        "network has to predict, the generator carries <strong>10.48 %</strong>, " +
+        "not 2.80 %. M3 inherited that bias almost exactly: its mean signed error " +
+        "on the test guns is −2.92°, against −0.71° for M1, and the iterative " +
+        "method's own bias on those guns is −2.58°.</p>" +
+        '<p class="note">The synthetic rows are kept and remain useful as a fast ' +
+        "stand-in <em>for the iterative method</em> — which is what they actually " +
+        "are, and what a multi-objective optimizer needs when it must evaluate " +
+        "the classical synthesis tens of thousands of times. They are not a route " +
+        "to better prediction of measured angles. <strong>M1, trained on real " +
+        "guns only, remains the model this site reports.</strong></p>";
+    }
 
     /* per-case */
     var b = BENCH.M1;

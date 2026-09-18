@@ -30960,7 +30960,9 @@
         27,
         28
       ],
-      "plain_language": "The physics model behind the synthetic rows was checked against 30 real guns. Over the whole range it is off by 5.75 % on average, which is not good enough. Restricted to convergence ratios of 8 or more it is off by 2.80 %, which is better than the 3.74 % the reference paper's own network achieves - so synthetic rows were generated only there. Seven real guns sit below that cut-off and have no synthetic support at all."
+      "mre_pct_vs_experiment": 10.48,
+      "iterative_method_mre_vs_experiment": 9.71,
+      "plain_language": "The physics model behind the synthetic rows was checked against the 30 real guns. Over the whole range it reproduces the classical iterative method to 5.75 %; restricted to convergence ratios of 8 or more, to 2.80 %. Rows were generated only in that restricted region, and seven real guns sit below the cut-off with no synthetic support at all. Note carefully what that 2.80 % measures: agreement with the iterative METHOD, not with measurement."
     },
     "source_papers": [
       "panahi2025",

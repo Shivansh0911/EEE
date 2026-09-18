@@ -114,6 +114,8 @@ def build_dataset(df):
             },
             "generator": {
                 "envelope": "C >= 8",
+                # Agreement with theta_iterative_deg, NOT with the measured
+                # angle. The distinction is the whole of BENCHMARK.md section 11.
                 "mre_pct": 2.80,
                 "mae_deg": 0.85,
                 "n_validation_cases": 23,
@@ -121,15 +123,17 @@ def build_dataset(df):
                 "strict_gate_failed": True,
                 "strict_gate_numbers": "1.66 deg / 5.75 % over all 30 cases",
                 "excluded_cases": [4, 7, 10, 18, 19, 27, 28],
+                "mre_pct_vs_experiment": 10.48,
+                "iterative_method_mre_vs_experiment": 9.71,
                 "plain_language": (
                     "The physics model behind the synthetic rows was checked "
-                    "against 30 real guns. Over the whole range it is off by "
-                    "5.75 % on average, which is not good enough. Restricted to "
-                    "convergence ratios of 8 or more it is off by 2.80 %, which "
-                    "is better than the 3.74 % the reference paper's own network "
-                    "achieves - so synthetic rows were generated only there. "
-                    "Seven real guns sit below that cut-off and have no "
-                    "synthetic support at all."
+                    "against the 30 real guns. Over the whole range it "
+                    "reproduces the classical iterative method to 5.75 %; "
+                    "restricted to convergence ratios of 8 or more, to 2.80 %. "
+                    "Rows were generated only in that restricted region, and "
+                    "seven real guns sit below the cut-off with no synthetic "
+                    "support at all. Note carefully what that 2.80 % measures: "
+                    "agreement with the iterative METHOD, not with measurement."
                 ),
             },
             "source_papers": sorted(set(df["source_key"])),
@@ -217,7 +221,9 @@ def build_lb_table(n=1501, gamma_max=3.0):
 def build_benchmark(root):
     """The numbers the Results tab quotes, straight from the run artefacts."""
     out = {}
-    for model_id, run_name in (("M1", "m1_run.json"), ("M1-multi", "m1-multi_run.json")):
+    for model_id, run_name in (("M1", "m1_run.json"),
+                               ("M1-multi", "m1-multi_run.json"),
+                               ("M3", "m3_run.json")):
         path = os.path.join(root, "reports", run_name)
         if not os.path.exists(path):
             continue
@@ -238,6 +244,9 @@ def build_benchmark(root):
         out[model_id] = {
             "targets": tgts,
             "n_params": run["n_params"],
+            "n_train_rows": run.get("n_train_rows"),
+            "n_real_train": run.get("n_real_train_rows"),
+            "n_synthetic_train": run.get("n_synthetic_train", 0),
             "seed": run["seed"],
             "epochs_run": run["epochs_run"],
             "metrics": {"selected": selected, "by_split": run["metrics"]},
