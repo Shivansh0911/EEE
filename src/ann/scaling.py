@@ -91,3 +91,45 @@ def saturation_report(Yn_pred, limit=0.98):
     Yn_pred = np.atleast_2d(np.asarray(Yn_pred, dtype=float))
     hits = np.argwhere(np.abs(Yn_pred) > limit)
     return [(int(i), int(k), float(Yn_pred[i, k])) for i, k in hits]
+
+
+class InputPipeline:
+    """
+    The input half of the model: per-column transform, then min-max to [-1, 1].
+
+    These two steps are bundled because they must never come apart. The scaler's
+    min/max live in TRANSFORMED space, so a consumer that applied the scaler
+    without the transform -- the browser, say -- would get plausible numbers that
+    are wrong. Keeping them in one object, exported as one block, makes that
+    mistake hard to make.
+    """
+
+    def __init__(self, scaler, inputs, spec):
+        self.scaler = scaler
+        self.inputs = list(inputs)
+        self.spec = dict(spec or {})
+
+    @classmethod
+    def fit(cls, X, inputs, spec):
+        """Fit on TRAINING rows only, in physical units."""
+        from .transforms import forward
+        return cls(MinMaxScaler.fit(forward(X, list(inputs), spec)), inputs, spec)
+
+    def transform(self, X):
+        from .transforms import forward
+        return self.scaler.transform(forward(X, self.inputs, self.spec))
+
+    def envelope(self):
+        """The training envelope back in PHYSICAL units, per input column."""
+        from .transforms import inverse
+        lo = inverse(self.scaler.x_min.reshape(1, -1), self.inputs, self.spec)[0]
+        hi = inverse(self.scaler.x_max.reshape(1, -1), self.inputs, self.spec)[0]
+        return {n: [float(lo[j]), float(hi[j])] for j, n in enumerate(self.inputs)}
+
+    @property
+    def x_min(self):
+        return self.scaler.x_min
+
+    @property
+    def x_max(self):
+        return self.scaler.x_max

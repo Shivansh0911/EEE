@@ -192,9 +192,72 @@ assume.
 
 ---
 
+## D8 — C is log-scaled before normalisation
+
+**Decision.** A per-input transform is applied **before** min-max scaling, and
+the default is `input_transform = {"C": "log"}` — natural log. Configured in
+`src/ann/config.py`, implemented in `src/ann/transforms.py`, carried in the
+exported model JSON so the browser applies the identical transform.
+
+**This reverses an earlier position.** An earlier draft of `BENCHMARK.md`
+rejected log-scaling as test-set fitting. That reasoning was wrong on both of
+its halves, and the correction is recorded rather than quietly applied.
+
+**Why it is a priori domain knowledge, not selection on test data.**
+
+1. **The paper never states a per-input transform.** It says the data were
+   normalized. Linear scaling of C was *our* assumption about what that meant,
+   not a claim the paper makes. So "the paper scales C linearly, and we should
+   match it" was never true — there was nothing to match. Choosing between
+   linear and log is a choice we were always making; the only question is which
+   evidence decides it.
+
+2. **ln C is the coordinate the physics is written in.** The synthesis enters
+   through γ = ln(R_c/R_a), and equation (II) of our own physics model contains
+   `0.5*ln(C)` explicitly. A network given C rather than ln C is being asked to
+   learn the logarithm before it can start on the actual relationship, using
+   part of a 23-parameter budget.
+
+3. **The evidence predates the ANN entirely.** `VALIDATION_table2.md` reports
+   `R(err, lnC) = +0.794` — the correlation of the *physics closure residual*
+   with ln C. That was computed from the physics probe, before any network
+   existed, and the seven test guns played no part in producing it. It is
+   evidence about the coordinate system, not about a model's score.
+
+4. **The linear scaling is measurably degenerate.** C spans 5.12 to 306.3, a
+   factor of 59.8. Under linear min-max, **25 of the 30 rows fall in the bottom
+   15 %** of the input range and the median row sits at normalised position
+   **0.04** — nearly every gun is crushed against −1 and the network has almost
+   no resolution to work with. Under ln C the median row sits at **0.295** and
+   the rows spread across the interval. This is a property of the data, visible
+   without fitting anything.
+
+**The honest caveat, stated plainly.** The improvement from log-scaling was
+**observed before the transform was adopted.** It first appeared as diagnostic
+E4 in an earlier benchmark run, which measured it against the seven test guns
+and reported it. So this is **not a blind pre-registration**: we had seen the
+number before making the choice, and a reader is entitled to discount it for
+that reason.
+
+What can be said in its defence is that the four arguments above do not depend
+on that number — points 1, 2 and 4 could have been made before any model was
+trained, and point 3 was in the repository before the ANN existed. What cannot
+be said is that we chose it without knowing the answer. Both halves belong in
+the record.
+
+**Measured effect** (median test MRE on θ over 30 restarts; full table in
+`BENCHMARK.md`): the restart-to-restart spread narrows sharply as well as the
+median falling, which is the more interesting half — a model that stops
+depending on its initialisation is a better-posed model, not just a
+better-scoring one.
+
+---
+
 ## Open items
 
-1. **D3** — supervisor to confirm the definition of the second output.
+1. **D3** — supervisor to confirm the definition of the second output. Note the
+   measured cost of carrying a second output at all (D3 continued, BENCHMARK §7):
+   if the answer is reading A, `--model m1` is already it.
 2. **D4** — obtain a clean PDF of Vaughan 1981, Tiwary & Basu 1987, or Yang 2006.
    This is the single blocking item for the entire synthetic-data path, and
    therefore for the NSGA-II optimizer that depends on the surrogate.

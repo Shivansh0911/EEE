@@ -8,7 +8,7 @@ be) is answered by editing one line rather than the architecture.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 # The three design inputs, in the order the paper lists them.
 INPUTS = ["perveance_uperv", "rw_mm", "C"]
@@ -28,6 +28,12 @@ class TrainConfig:
     targets: List[str] = field(default_factory=lambda: list(DEFAULT_TARGETS))
     inputs: List[str] = field(default_factory=lambda: list(INPUTS))
     beam_type: str = "pencil"           # standing rule 11; nothing else trains
+
+    # Per-input transform, applied BEFORE min-max scaling. C is log-scaled
+    # because ln C is the coordinate the physics is written in -- equation (II)
+    # contains 0.5*ln(C) explicitly -- and because C spans a factor of 60, which
+    # linear min-max compresses into the bottom sixth of the range. See D8.
+    input_transform: Dict[str, str] = field(default_factory=lambda: {"C": "log"})
 
     # --- architecture (paper Table 1: 3 -> 3 -> 2 -> n_out, tansig throughout) ---
     hidden: List[int] = field(default_factory=lambda: [3, 2])

@@ -20,14 +20,16 @@ import pytest
 from src.ann import dataset as ds
 from src.ann.config import TrainConfig
 from src.ann.network import n_params, nguyen_widrow, predict
-from src.ann.scaling import MinMaxScaler
+from src.ann.scaling import InputPipeline, MinMaxScaler
 from src.export.weights_to_json import build_payload
 
 MODEL_PATH = os.path.join(ds.repo_root(), "models", "model_m1.json")
+MULTI_PATH = os.path.join(ds.repo_root(), "models", "model_m1_multi.json")
 
 REQUIRED_KEYS = {
     "schema_version", "architecture", "activation", "output_activation",
     "weights", "scaler", "targets", "training_envelope", "metrics", "provenance",
+    "input_transform", "inputs",
 }
 
 
@@ -38,7 +40,8 @@ def payload():
     theta = nguyen_widrow(cfg.layer_sizes, rng)
     X = rng.uniform(0.3, 300.0, size=(12, cfg.n_in))
     Y = rng.uniform(5.0, 70.0, size=(12, cfg.n_out))
-    xs, ys = MinMaxScaler.fit(X), MinMaxScaler.fit(Y)
+    xs = InputPipeline.fit(X, cfg.inputs, cfg.input_transform)
+    ys = MinMaxScaler.fit(Y)
     p = build_payload(theta, cfg, xs, ys, {"test_mre_pct": {}}, {"model_id": "TEST"})
     return p, theta, cfg, xs, ys
 
@@ -63,17 +66,33 @@ def test_activation_names_are_the_javascript_ones(payload):
     assert p["activation"] == "tanh" and p["output_activation"] == "tanh"
 
 
+def test_input_transform_is_exported(payload):
+    """
+    The scaler's x ranges are in transformed space, so a consumer that applied
+    the scaler without the transform would get plausible, wrong numbers. The
+    transform has to travel with the model.
+    """
+    p, _, cfg, *_ = payload
+    assert p["input_transform"] == {"C": "log"}
+    assert p["inputs"] == cfg.inputs
+
+
 def test_forward_pass_rebuilt_from_json_matches_the_python_network(payload):
     """
     The whole point of the file: someone reading only the JSON must get the same
-    answer. Tolerance is 1e-12, far tighter than the 1e-9 the JS parity test
-    will use, because nothing here crosses a language boundary.
+    answer, INCLUDING the input transform. Tolerance is 1e-12, far tighter than
+    the 1e-9 the JS parity test uses, because nothing here crosses a language
+    boundary.
     """
     p, theta, cfg, xs, ys = payload
     rng = np.random.default_rng(11)
     X = rng.uniform(0.3, 300.0, size=(50, 3))
 
-    Xn = 2 * (X - np.array(p["scaler"]["x_min"])) / (
+    Xt = X.copy()
+    for name, kind in p["input_transform"].items():
+        assert kind == "log"
+        Xt[:, p["inputs"].index(name)] = np.log(Xt[:, p["inputs"].index(name)])
+    Xn = 2 * (Xt - np.array(p["scaler"]["x_min"])) / (
         np.array(p["scaler"]["x_max"]) - np.array(p["scaler"]["x_min"])) - 1
     a = Xn
     n_layers = len(p["architecture"]) - 1
@@ -84,9 +103,14 @@ def test_forward_pass_rebuilt_from_json_matches_the_python_network(payload):
     assert np.max(np.abs(a - expected)) < 1e-12
 
 
-@pytest.mark.skipif(not os.path.exists(MODEL_PATH), reason="M1 not exported yet")
-def test_shipped_model_is_well_formed_and_honest():
-    with open(MODEL_PATH, encoding="utf-8") as f:
+@pytest.mark.parametrize("path,targets", [
+    (MODEL_PATH, ["theta_cone_deg"]),
+    (MULTI_PATH, ["theta_cone_deg", "Rc_mm"]),
+])
+def test_shipped_models_are_well_formed_and_honest(path, targets):
+    if not os.path.exists(path):
+        pytest.skip(f"{os.path.basename(path)} not exported yet")
+    with open(path, encoding="utf-8") as f:
         m = json.load(f)
     assert REQUIRED_KEYS <= set(m)
     assert m["provenance"]["tier_b_rows"] == 0, (
@@ -94,6 +118,11 @@ def test_shipped_model_is_well_formed_and_honest():
         "on a physics validation that fails"
     )
     assert m["provenance"]["n_train"] == 23 and m["provenance"]["n_test"] == 7
-    assert m["targets"] == ["theta_cone_deg", "Rc_mm"]
+    assert m["targets"] == targets
+    assert m["input_transform"] == {"C": "log"}
     for lo, hi in m["training_envelope"].values():
         assert lo < hi
+    # The distribution, not just the lucky draw, must reach the browser.
+    d = m["metrics"]["restart_distribution"]
+    assert d["test_mre_pct_median"] is not None
+    assert d["test_mre_pct_min"] <= d["test_mre_pct_median"] <= d["test_mre_pct_max"]

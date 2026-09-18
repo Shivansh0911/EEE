@@ -85,3 +85,30 @@ def format_table(blocks, names):
                 f"{m['max_abs_err']:.4f} |"
             )
     return "\n".join(lines)
+
+
+def spearman_r(y, yhat):
+    """
+    Rank correlation.
+
+    Reported alongside Pearson wherever a correlation is used to argue that one
+    quantity ranks another, because a single extreme run can carry a Pearson
+    coefficient almost on its own. If Pearson is high and Spearman is not, the
+    relationship is one outlier, not a trend.
+    """
+    y = np.asarray(y, dtype=float)
+    yhat = np.asarray(yhat, dtype=float)
+    if y.size < 3:
+        return float("nan")
+
+    def ranks(v):
+        order = np.argsort(v, kind="mergesort")
+        r = np.empty(v.size, dtype=float)
+        r[order] = np.arange(v.size, dtype=float)
+        # average ties, so a plateau does not get an arbitrary order
+        _, inv, counts = np.unique(v, return_inverse=True, return_counts=True)
+        sums = np.zeros(counts.size)
+        np.add.at(sums, inv, r)
+        return (sums / counts)[inv]
+
+    return pearson_r(ranks(y), ranks(yhat))

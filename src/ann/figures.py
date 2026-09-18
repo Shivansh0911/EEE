@@ -270,6 +270,72 @@ def fig6_percentage_error(run, df, out_dir):
     _save(fig, os.path.join(out_dir, "fig6_percentage_error.png"))
 
 
+def fig7_restart_histogram(out_dir, experiments):
+    """
+    The distribution of test MRE over 30 restarts, with the paper's 3.74 % marked.
+
+    This figure exists because a single test-MRE number on seven guns is one draw
+    from a wide distribution, and quoting the draw instead of the distribution is
+    how a reproducibility problem gets hidden. Two models, two panels, a shared
+    x-axis so the spreads are directly comparable.
+
+    The paper's value is drawn as a dashed neutral rule rather than a coloured
+    series: it is a reference line, not a competitor in the same distribution.
+    """
+    e5 = (experiments or {}).get("E5_shipped_distributions")
+    if not e5:
+        print("  skipping fig7: no E5 block (run python -m src.ann.experiments)")
+        return
+
+    labels = list(e5)
+    fig, axes = plt.subplots(len(labels), 1, figsize=(7.6, 2.5 * len(labels) + 1.2),
+                             sharex=True)
+    axes = np.atleast_1d(axes)
+    allv = np.concatenate([np.array(e5[k]["test_mre_all"]) for k in labels])
+
+    # A single divergent restart would otherwise stretch the axis to 120 % and
+    # squash every bar that matters into one column. The axis is clipped and the
+    # runs beyond it are named in text instead of being silently dropped.
+    x_max = float(np.percentile(allv, 90)) * 1.6
+    bins = np.linspace(0, x_max, 22)
+
+    for ax, key, colour in zip(axes, labels, (SERIES["ann"], SERIES["modified"])):
+        v = np.array(e5[key]["test_mre_all"], dtype=float)
+        ax.hist(np.clip(v, None, bins[-1]), bins=bins, color=colour,
+                edgecolor=SURFACE, linewidth=1.2, zorder=3)
+        off = v[v > x_max]
+        if off.size:
+            ax.text(0.985, 0.62,
+                    f"+{off.size} restart{'s' if off.size > 1 else ''} beyond this "
+                    f"axis, at {', '.join(f'{o:.0f} %' for o in sorted(off))}",
+                    transform=ax.transAxes, ha="right", va="top",
+                    fontsize=9, color=colour)
+        med = float(np.median(v))
+        ax.axvline(3.74, color=INK_2, linewidth=1.8, linestyle="--", zorder=4)
+        ax.axvline(med, color=colour, linewidth=1.8, zorder=4)
+        _style(ax, title=f"{key} — {len(v)} restarts", ylabel="restarts")
+        top = ax.get_ylim()[1]
+        ax.annotate("paper, 3.74 %", xy=(3.74, top * 0.92),
+                    xytext=(6, 0), textcoords="offset points",
+                    fontsize=9, color=INK_2, va="top")
+        ax.annotate(f"our median {med:.2f} %", xy=(med, top * 0.45),
+                    xytext=(6, 0), textcoords="offset points",
+                    fontsize=9, color=INK_2, va="top")
+        ax.text(0.985, 0.92,
+                f"median {med:.2f} %   IQR {np.percentile(v, 25):.2f}–"
+                f"{np.percentile(v, 75):.2f} %   full range {v.min():.2f}–{v.max():.2f} %",
+                transform=ax.transAxes, ha="right", va="top",
+                fontsize=9, color=INK_MUTED)
+        ax.set_xlim(0, x_max)
+
+    axes[-1].set_xlabel("Test MRE on θ across the paper's 7 test guns [%]",
+                        color=INK_2, fontsize=10)
+    fig.suptitle("Fig. 7 — the result is a distribution, not a number",
+                 color=INK, fontsize=12, x=0.01, ha="left", y=0.995)
+    fig.tight_layout(rect=(0, 0, 1, 0.97))
+    _save(fig, os.path.join(out_dir, "fig7_restart_histogram.png"))
+
+
 def main():
     root = ds.repo_root()
     out_dir = os.path.join(root, "reports", "figures")
@@ -277,6 +343,11 @@ def main():
 
     with open(os.path.join(root, "reports", "m1_run.json"), encoding="utf-8") as f:
         run = json.load(f)
+    exp_path = os.path.join(root, "reports", "experiments.json")
+    experiments = None
+    if os.path.exists(exp_path):
+        with open(exp_path, encoding="utf-8") as f:
+            experiments = json.load(f)
     df = pd.read_csv(ds.default_path())
     df = df[df["beam_type"] == "pencil"].reset_index(drop=True)
 
@@ -285,6 +356,7 @@ def main():
     fig4_mse_vs_epochs(run, out_dir)
     fig5_method_comparison(run, df, out_dir)
     fig6_percentage_error(run, df, out_dir)
+    fig7_restart_histogram(out_dir, experiments)
 
 
 if __name__ == "__main__":

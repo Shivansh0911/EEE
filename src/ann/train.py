@@ -44,12 +44,19 @@ from .config import TrainConfig
 from .lm import train_lm, train_with_restarts
 from .metrics import format_table, pearson_r, per_output
 from .network import n_params, predict
-from .scaling import MinMaxScaler, save_scalers, saturation_report
+from .scaling import InputPipeline, MinMaxScaler, save_scalers, saturation_report
+from .transforms import describe
 
 
-def fit_scalers(X, Y):
-    """Fit on the given rows only. Callers must pass TRAINING rows."""
-    return MinMaxScaler.fit(X), MinMaxScaler.fit(Y)
+def fit_scalers(X, Y, cfg):
+    """
+    Fit on the given rows only. Callers must pass TRAINING rows.
+
+    The input side is an InputPipeline (transform then min-max), not a bare
+    scaler, so the log-scaling of C cannot come adrift from the min/max fitted
+    in log space.
+    """
+    return InputPipeline.fit(X, cfg.inputs, cfg.input_transform), MinMaxScaler.fit(Y)
 
 
 def cv_score(X, Y, cfg, seed, folds, rng_seed=0):
@@ -72,7 +79,7 @@ def cv_score(X, Y, cfg, seed, folds, rng_seed=0):
         Xtr, Ytr = X[mask], Y[mask]
         Xva, Yva = X[hold], Y[hold]
 
-        xs, ys = fit_scalers(Xtr, Ytr)          # fold-train only: no leak
+        xs, ys = fit_scalers(Xtr, Ytr, cfg)     # fold-train only: no leak
         r = train_lm(xs.transform(Xtr), ys.transform(Ytr), cfg,
                      val=(xs.transform(Xva), ys.transform(Yva)), seed=seed)
 
@@ -95,6 +102,7 @@ def train_m1(cfg, args):
 
     print(f"architecture {cfg.layer_sizes}  ->  {n_params(cfg.layer_sizes)} parameters")
     print(f"targets      {cfg.targets}")
+    print(f"input xform  {describe(cfg.input_transform)}")
     print(f"residual wts {cfg.weights}")
     print(f"split        {len(train_df)} train / {len(test_df)} test (paper's own)")
     print(f"             test cases {sorted(test_df['source_case_id'])}")
@@ -122,7 +130,7 @@ def train_m1(cfg, args):
         best, budget = None, cfg.max_epochs
 
     # --- final fit on all 23 training rows ---
-    x_scaler, y_scaler = fit_scalers(X_tr, Y_tr)
+    x_scaler, y_scaler = fit_scalers(X_tr, Y_tr, cfg)
     Xn_tr, Yn_tr = x_scaler.transform(X_tr), y_scaler.transform(Y_tr)
     Xn_te = x_scaler.transform(X_te)
 
@@ -176,12 +184,14 @@ def train_m1(cfg, args):
 
     # --- persist ---
     os.makedirs(os.path.join(root, "models"), exist_ok=True)
-    scaler_path = os.path.join(root, "models", "scaler.json")
+    scaler_path = os.path.join(root, "models", f"scaler_{args.model}.json")
     save_scalers(scaler_path, x_scaler, y_scaler, cfg.inputs, cfg.targets)
     print(f"\nwrote {scaler_path}")
 
     run = {
-        "model_id": "M1",
+        "model_id": args.model.upper(),
+        "input_transform": dict(cfg.input_transform),
+        "training_envelope": x_scaler.envelope(),
         "config": dataclasses.asdict(cfg),
         "n_params": n_params(cfg.layer_sizes),
         "seed": int(result.seed) if result.seed is not None else None,
@@ -210,7 +220,7 @@ def train_m1(cfg, args):
         },
         "truth": {"train": Y_tr.tolist(), "test": Y_te.tolist()},
     }
-    run_path = os.path.join(root, "reports", "m1_run.json")
+    run_path = os.path.join(root, "reports", f"{args.model}_run.json")
     with open(run_path, "w", encoding="utf-8") as f:
         json.dump(run, f, indent=2)
     print(f"wrote {run_path}")
@@ -235,7 +245,7 @@ def restart_variance(seed_scores, cfg, X_tr, Y_tr, X_te, Y_te):
     if not seed_scores:
         return None
 
-    x_scaler, y_scaler = fit_scalers(X_tr, Y_tr)
+    x_scaler, y_scaler = fit_scalers(X_tr, Y_tr, cfg)
     Xn_tr, Yn_tr = x_scaler.transform(X_tr), y_scaler.transform(Y_tr)
     Xn_te = x_scaler.transform(X_te)
 
@@ -285,10 +295,21 @@ def warn_saturation(split, Pn, df, cfg):
         print(f"    case {case:>3}  {cfg.targets[k]:<16} normalised {v:+.4f}")
 
 
+MODEL_TARGETS = {
+    # M1 is the headline: theta only. The second output is carried by M1-multi,
+    # because it measurably costs theta accuracy at 23 training rows (D3, and
+    # section 7 of BENCHMARK.md) -- that cost is a finding to report, not a
+    # default to impose on the headline number.
+    "m1": ["theta_cone_deg"],
+    "m1-multi": ["theta_cone_deg", "Rc_mm"],
+}
+
+
 def build_config(args):
     cfg = TrainConfig()
-    if args.targets:
-        cfg = dataclasses.replace(cfg, targets=args.targets)
+    targets = args.targets or MODEL_TARGETS.get(args.model)
+    if targets:
+        cfg = dataclasses.replace(cfg, targets=targets)
     if args.residual_weights:
         cfg = dataclasses.replace(cfg, residual_weights=args.residual_weights)
     return dataclasses.replace(
@@ -303,7 +324,10 @@ def build_config(args):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="Train the Pierce-gun surrogate.")
-    p.add_argument("--model", default="m1", choices=["m1", "m2", "m3"])
+    p.add_argument("--model", default="m1",
+                   choices=["m1", "m1-multi", "m2", "m3"],
+                   help="m1 = theta only (the headline replication); "
+                        "m1-multi = theta + Rc_mm (the multi-output deliverable)")
     p.add_argument("--restarts", type=int, default=10)
     p.add_argument("--max-epochs", type=int, default=5000)
     p.add_argument("--cv-folds", type=int, default=5,
@@ -330,14 +354,35 @@ def main(argv=None):
     if args.export:
         from ..export.weights_to_json import write_model
         import datetime as dt
+        spread = run.get("restart_spread") or {}
         metrics = {
-            "train_mre_pct": {k: blocks["train"][k]["mre_pct"] for k in cfg.targets},
-            "test_mre_pct": {k: blocks["test"][k]["mre_pct"] for k in cfg.targets},
-            "test_rmse": {k: blocks["test"][k]["rmse"] for k in cfg.targets},
-            "test_pearson_r": {k: blocks["test"][k]["pearson_r"] for k in cfg.targets},
+            "selected": {
+                "train_mre_pct": {k: blocks["train"][k]["mre_pct"] for k in cfg.targets},
+                "test_mre_pct": {k: blocks["test"][k]["mre_pct"] for k in cfg.targets},
+                "test_rmse": {k: blocks["test"][k]["rmse"] for k in cfg.targets},
+                "test_pearson_r": {k: blocks["test"][k]["pearson_r"] for k in cfg.targets},
+            },
+            # The distribution is the honest headline: a single test MRE on seven
+            # guns is one draw from a wide lottery (section 4 of BENCHMARK.md).
+            # The UI quotes the median as its error band, not the lucky number.
+            "restart_distribution": {
+                "n_restarts": len(spread.get("rows", [])),
+                "target": cfg.targets[0],
+                "test_mre_pct_min": spread.get("test_mre_min"),
+                "test_mre_pct_median": spread.get("test_mre_median"),
+                "test_mre_pct_max": spread.get("test_mre_max"),
+                "corr_cv_vs_test_mre": spread.get("corr_cv_vs_test"),
+            },
+            "paper_reference": {
+                "train_mre_pct": 2.18, "test_mre_pct": 3.74,
+                "train_rmse_deg": 0.95, "test_rmse_deg": 2.09,
+                "train_pearson_r": 0.997, "test_pearson_r": 0.990,
+                "note": "Panahi et al. 2025, as printed; recomputed from Table 2 "
+                        "to train 2.1870 / test 3.7437",
+            },
         }
         provenance = {
-            "model_id": "M1",
+            "model_id": args.model.upper(),
             "trained_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
             "n_train": len(run["train_case_ids"]),
             "n_test": len(run["test_case_ids"]),
@@ -347,10 +392,16 @@ def main(argv=None):
             "split": "paper's own 23/7 (Table 2 asterisked cases as test)",
             "seed": run["seed"],
             "restarts": cfg.restarts,
+            "selection": "5-fold CV within the 23 training rows; test rows unused",
             "dataset": "data/processed/dataset_master.csv",
-            "notes": ("second target Rc_mm is a PLACEHOLDER under reading C of D3 "
-                      "and is a deterministic function of the inputs and theta"),
+            "input_transform_note": "C is log-scaled before min-max; see D8",
         }
+        if cfg.n_out > 1:
+            provenance["notes"] = (
+                "second target Rc_mm is a PLACEHOLDER under reading C of D3, is a "
+                "deterministic function of the inputs and theta, and measurably "
+                "costs theta accuracy at 23 training rows"
+            )
         path = args.export if os.path.isabs(args.export) else os.path.join(
             ds.repo_root(), args.export)
         write_model(path, result.theta, cfg, x_scaler, y_scaler, metrics, provenance)

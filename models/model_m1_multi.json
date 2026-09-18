@@ -4,61 +4,64 @@
     3,
     3,
     2,
-    1
+    2
   ],
   "activation": "tanh",
   "output_activation": "tanh",
   "weights": {
     "W1": [
       [
-        1.1457614807816419,
-        -1.3889218930136336,
-        0.8409172204538594
+        0.018538047416999645,
+        -0.6662447060320236,
+        -0.5186890492110399
       ],
       [
-        -0.15761678189989242,
-        0.22943472237823595,
-        0.358192435965416
+        -0.1576624946101759,
+        0.7256958075061875,
+        -0.09239629724813327
       ],
       [
-        0.7899556912292828,
-        -0.2700305660188652,
-        0.6346346387039655
+        0.26237421485507084,
+        1.9235140038551595,
+        0.6646764731034009
       ]
     ],
     "b1": [
-      -0.9972147440178113,
-      -0.7619221133809622,
-      1.1626809716458348
+      -0.32308658239958593,
+      0.32286146013909905,
+      -0.23550669158380258
     ],
     "W2": [
       [
-        1.0756414821037943,
-        -0.11388407010096797
+        -4.0874082257196935,
+        0.478813026123876
       ],
       [
-        -0.5897395242257945,
-        1.1354059605078297
+        1.5991889069284415,
+        0.596300272996402
       ],
       [
-        0.12252608090617277,
-        -0.7731438160667757
+        -0.21607305143920824,
+        -0.9658642299511108
       ]
     ],
     "b2": [
-      -0.9357037540513794,
-      -0.8774404801150832
+      -2.7582026879856234,
+      -0.5730421692995131
     ],
     "W3": [
       [
-        1.0736433800148002
+        -2.462344129497523,
+        4.578582214544594
       ],
       [
-        -1.2043528390419576
+        4.958174772606232,
+        -0.8183075521335358
       ]
     ],
     "b3": [
-      -0.24634305475266485
+      0.279813751645259,
+      2.870634662230298
     ]
   },
   "input_transform": {
@@ -76,10 +79,12 @@
       5.724565013838729
     ],
     "y_min": [
-      9.8
+      9.8,
+      9.5065
     ],
     "y_max": [
-      70.0
+      70.0,
+      44.3917
     ],
     "note": "fitted on training rows only; x ranges are in transformed space, so input_transform must be applied first"
   },
@@ -89,7 +94,8 @@
     "C"
   ],
   "targets": [
-    "theta_cone_deg"
+    "theta_cone_deg",
+    "Rc_mm"
   ],
   "training_envelope": {
     "perveance_uperv": [
@@ -109,34 +115,43 @@
     "theta_cone_deg": [
       9.8,
       70.0
+    ],
+    "Rc_mm": [
+      9.5065,
+      44.3917
     ]
   },
   "residual_weights": [
+    1.0,
     1.0
   ],
   "saturation_limit": 0.98,
   "metrics": {
     "selected": {
       "train_mre_pct": {
-        "theta_cone_deg": 6.1843070246237035
+        "theta_cone_deg": 6.67414304317311,
+        "Rc_mm": 7.7300183633551445
       },
       "test_mre_pct": {
-        "theta_cone_deg": 7.926882552007833
+        "theta_cone_deg": 8.770796545704327,
+        "Rc_mm": 8.33638639528312
       },
       "test_rmse": {
-        "theta_cone_deg": 3.808347356706279
+        "theta_cone_deg": 3.2644119692907445,
+        "Rc_mm": 1.8830869400311017
       },
       "test_pearson_r": {
-        "theta_cone_deg": 0.9682932946508532
+        "theta_cone_deg": 0.9706266277473521,
+        "Rc_mm": 0.9749681616060388
       }
     },
     "restart_distribution": {
       "n_restarts": 10,
       "target": "theta_cone_deg",
-      "test_mre_pct_min": 7.121909639446118,
-      "test_mre_pct_median": 8.394443899971504,
-      "test_mre_pct_max": 10.664833423660564,
-      "corr_cv_vs_test_mre": -0.042015333251493724
+      "test_mre_pct_min": 6.272185943938348,
+      "test_mre_pct_median": 12.049273400563415,
+      "test_mre_pct_max": 23.94083940345298,
+      "corr_cv_vs_test_mre": 0.215720409721959
     },
     "paper_reference": {
       "train_mre_pct": 2.18,
@@ -149,19 +164,20 @@
     }
   },
   "provenance": {
-    "model_id": "M1",
-    "trained_at": "2026-09-18T06:26:18+05:30",
+    "model_id": "M1-MULTI",
+    "trained_at": "2026-09-18T06:26:28+05:30",
     "n_train": 23,
     "n_test": 7,
     "tier_a_rows": 30,
     "tier_b_rows": 0,
     "tier_c_rows": 0,
     "split": "paper's own 23/7 (Table 2 asterisked cases as test)",
-    "seed": 101,
+    "seed": 104,
     "restarts": 10,
     "selection": "5-fold CV within the 23 training rows; test rows unused",
     "dataset": "data/processed/dataset_master.csv",
     "input_transform_note": "C is log-scaled before min-max; see D8",
-    "exported_at": "2026-09-18T06:26:18+05:30"
+    "notes": "second target Rc_mm is a PLACEHOLDER under reading C of D3, is a deterministic function of the inputs and theta, and measurably costs theta accuracy at 23 training rows",
+    "exported_at": "2026-09-18T06:26:28+05:30"
   }
 }

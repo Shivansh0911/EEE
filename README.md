@@ -139,8 +139,10 @@ electron-gun-moo/
   Levenberg–Marquardt with an **analytic Jacobian** verified against finite
   differences to < 1e-6. Nguyen–Widrow restarts, per-output residual weights,
   saturation warnings, train-only scaler. 46 tests pass.
-- M1 trained on the paper's own 23/7 split, figures 3–6 reproduced, model
-  exported to `models/model_m1.json` in the B.3 schema.
+- M1 (θ) and M1-multi (θ + `Rc_mm`) trained on the paper's own 23/7 split,
+  figures 3–7 reproduced, both exported for the browser.
+- C is log-scaled before normalisation (D8) — ln C is the coordinate the physics
+  is written in. This halved the test error and collapsed the restart spread.
 
 **Found along the way**
 
@@ -158,14 +160,13 @@ electron-gun-moo/
   above and D4.
 - **M2 and M3 not trained.** M3 needs Tier B; M2 exists only as M3's control, so
   training it alone yields a number with nothing to compare it to.
-- **M1 does not reproduce the paper's test accuracy** — 17.27 % test MRE against
-  the paper's 3.74 %. The dataset and metric code are verified correct (the
-  paper's own reported numbers recompute exactly from our Tier A columns), and
-  the cause is that 30 rows cannot support 26 parameters: test MRE varies from
-  8 % to 42 % across initialisations and no selection signal available within 23
-  rows can pick the good ones. Full evidence in `reports/BENCHMARK.md`. Not
-  tuned to look better, because the only thing left to tune against is the
-  seven-gun test set that is also the reported result.
+- **M1 does not reproduce the paper's test accuracy** — 8.33 % median test MRE
+  (IQR 7.1–9.9 % over 30 restarts) against the paper's 3.74 %. The dataset and
+  metric code are verified correct: the paper's own reported numbers recompute
+  exactly from our Tier A columns. We can say the published figure is not
+  robustly reproducible from the method as stated; we cannot say why, because
+  the paper reports no seed, no variance and no selection rule. Full evidence
+  in `reports/BENCHMARK.md`.
 - **Unblock:** a clean PDF of Vaughan 1981, Tiwary & Basu 1987, or Yang 2006. All
   paywalled at IEEE; a university library login is the fastest route.
 
@@ -193,9 +194,10 @@ Rebuild the artefacts, in dependency order:
 python src/data/build_tier_a.py      # 30-row Tier A set from the verbatim PDF text
 python src/data/build_master.py      # adds the derived targets -> dataset_master.csv
 python src/physics/probe_closure.py  # rerun the physics gate sweep (expects FAIL)
-python -m src.ann.train --model m1 --export models/model_m1.json
-python -m src.ann.figures            # paper figures 3-6 -> reports/figures/
+python -m src.ann.train --model m1       --export models/model_m1.json
+python -m src.ann.train --model m1-multi --export models/model_m1_multi.json
 python -m src.ann.experiments        # the supporting measurements in BENCHMARK.md
+python -m src.ann.figures            # paper figures 3-6, plus fig 7
 pytest                               # Jacobian, scaler, data contracts, export
 ```
 

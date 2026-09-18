@@ -1,19 +1,23 @@
 """
-Export a trained model to the single JSON file described in B.3 of the master
-build document.
+Export a trained model to the single JSON file the browser reads.
 
 One file, two consumers. The browser must never guess the network's shape, the
-activation, or the scaler's ranges -- if it guesses and is wrong, the failure
-shows up as a plausible-looking wrong angle during a live demo rather than as an
-exception. So architecture, weights, scaler, targets, envelope, metrics and
-provenance all travel together, and both the Python and the JS forward pass read
-them from here.
+activation, the input transform, or the scaler's ranges -- if it guesses and is
+wrong, the failure shows up as a plausible-looking wrong angle during a live
+demo rather than as an exception. So architecture, weights, input transform,
+scaler, targets, envelope, metrics and provenance all travel together, and both
+the Python and the JavaScript forward pass read them from here.
 
-`tests/test_js_python_parity.py` (P7/P8) asserts the two agree to < 1e-9.
+`tests/test_js_python_parity.py` asserts the two agree to < 1e-9 on 100 random
+inputs, running the JS under Node.
+
+The `input_transform` block is the one most easily lost. The scaler's min/max
+are in TRANSFORMED space, so a consumer that applied the scaler without first
+applying ln to C would produce numbers that look reasonable and are wrong. It is
+exported explicitly and the parity test covers it.
 
 The activation is written as "tanh" rather than "tansig" because that is what
-the schema in B.3 specifies and what `Math.tanh` is called in JavaScript. They
-are the same function.
+`Math.tanh` is called in JavaScript. They are the same function.
 """
 
 import datetime as _dt
@@ -25,7 +29,7 @@ from ..ann.network import unpack
 _ACT_NAMES = {"tansig": "tanh", "linear": "linear"}
 
 
-def build_payload(theta, cfg, x_scaler, y_scaler, metrics, provenance):
+def build_payload(theta, cfg, x_pipeline, y_scaler, metrics, provenance):
     layers = unpack(theta, cfg.layer_sizes)
 
     weights = {}
@@ -33,39 +37,41 @@ def build_payload(theta, cfg, x_scaler, y_scaler, metrics, provenance):
         weights[f"W{i}"] = W.tolist()      # (n_in, n_out); JS does x @ W + b
         weights[f"b{i}"] = b.tolist()
 
-    envelope = {}
-    for j, name in enumerate(cfg.inputs):
-        envelope[name] = [float(x_scaler.x_min[j]), float(x_scaler.x_max[j])]
-
-    target_envelope = {}
-    for k, name in enumerate(cfg.targets):
-        target_envelope[name] = [float(y_scaler.x_min[k]), float(y_scaler.x_max[k])]
+    target_envelope = {
+        name: [float(y_scaler.x_min[k]), float(y_scaler.x_max[k])]
+        for k, name in enumerate(cfg.targets)
+    }
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "architecture": list(cfg.layer_sizes),
         "activation": _ACT_NAMES[cfg.activation],
         "output_activation": _ACT_NAMES[cfg.output_activation],
         "weights": weights,
+        # Applied to the named input BEFORE min-max scaling. See D8.
+        "input_transform": dict(cfg.input_transform),
         "scaler": {
-            "x_min": x_scaler.x_min.tolist(),
-            "x_max": x_scaler.x_max.tolist(),
+            "x_min": x_pipeline.x_min.tolist(),   # in TRANSFORMED space
+            "x_max": x_pipeline.x_max.tolist(),
             "y_min": y_scaler.x_min.tolist(),
             "y_max": y_scaler.x_max.tolist(),
-            "note": "fitted on training rows only",
+            "note": ("fitted on training rows only; x ranges are in transformed "
+                     "space, so input_transform must be applied first"),
         },
         "inputs": list(cfg.inputs),
         "targets": list(cfg.targets),
-        "training_envelope": envelope,
+        # Physical units, for the out-of-envelope warning in the UI.
+        "training_envelope": x_pipeline.envelope(),
         "target_envelope": target_envelope,
         "residual_weights": list(cfg.weights),
+        "saturation_limit": cfg.saturation_limit,
         "metrics": metrics,
         "provenance": provenance,
     }
 
 
-def write_model(path, theta, cfg, x_scaler, y_scaler, metrics, provenance):
-    payload = build_payload(theta, cfg, x_scaler, y_scaler, metrics, provenance)
+def write_model(path, theta, cfg, x_pipeline, y_scaler, metrics, provenance):
+    payload = build_payload(theta, cfg, x_pipeline, y_scaler, metrics, provenance)
     payload["provenance"].setdefault(
         "exported_at", _dt.datetime.now().astimezone().isoformat(timespec="seconds")
     )
