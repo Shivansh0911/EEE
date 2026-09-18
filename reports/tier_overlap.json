@@ -1,0 +1,31 @@
+{
+  "n_real_in_envelope": 23,
+  "n_anchored_exactly": 16,
+  "inside_bounding_box": 22,
+  "inside_convex_hull": 22,
+  "box_coverage_pct": 95.65217391304348,
+  "hull_coverage_pct": 95.65217391304348,
+  "max_nn_distance_normalised": 0.07166318937610404,
+  "median_nn_distance_unanchored": 0.034213136320385064,
+  "max_nn_distance_unanchored": 0.07166318937610404,
+  "median_synthetic_spacing_normalised": 0.07098484768995614,
+  "corr_lnC_rw_real": -0.5966709497923152,
+  "corr_lnC_rw_synthetic": 0.003344506014708031,
+  "excluded_cases": [
+    4,
+    7,
+    10,
+    18,
+    19,
+    27,
+    28
+  ],
+  "outside_hull_cases": [
+    26
+  ],
+  "outside_box_cases": [
+    26
+  ],
+  "n_synthetic": 1000,
+  "C_min": 8.0
+}
