@@ -52,21 +52,19 @@ below rather than quietly dropped:
 |---|---|---|---|---|---|
 | **M1** — headline | θ | 23 | the paper's 23 training cases | the paper's 7 test cases | **trained** |
 | **M1-multi** — the multi-output deliverable | θ, `Rc_mm` | 26 | same | same | **trained** |
-| **M2** literature only | — | — | all Tier A | held-out Tier A | **not trained** |
-| **M3** literature + synthetic | — | — | Tier A + Tier B | held-out Tier A only | **not trained — blocked** |
+| **M3** — real + synthetic | θ | 23 | 23 real + 1000 synthetic | the same 7 real test cases | **trained — see §11** |
+| **M2** literature only | — | — | all Tier A | held-out Tier A | not trained; M1 already fills this role |
 
 M1 is the headline because θ is the quantity the paper predicts and the only one
 with an external number to compare against. M1-multi carries the second output
 that was the actual deliverable; it is reported beside M1 rather than folded into
 it, so the cost of multi-task learning is visible rather than assumed.
 
-**M3 is blocked and M2 is pointless without it.** M3 needs Tier B, and Tier B has
-zero rows because the physics gate failed at MAE 1.66° / MRE 5.75 % against a
-required 0.5° / 1.5 % (`VALIDATION_table2.md`, D4). M2's only job is to be M3's
-control. `--model m3` refuses with that explanation rather than silently doing
-something else. The claim this project was built to test — M1 versus M3 on the
-same seven real guns — **cannot be made** until a clean PDF of Vaughan 1981,
-Tiwary & Basu 1987 or Yang 2006 unblocks the physics engine.
+**M3 now exists** (D9): Tier B was generated over the restricted C ≥ 8 envelope
+and M3 was trained on 23 real + 1000 synthetic rows, tested on the same seven
+real guns. **It is worse than M1.** Section 11 has the result and, more usefully,
+the reason. M2 is not trained because M1 already occupies its role — real guns
+only, same test set.
 
 ---
 
@@ -305,5 +303,104 @@ Not affected by anything above:
    no selection rule — the difference may be a method detail it does not record.
 4. Two conclusions from the previous revision were withdrawn, both artifacts of
    the old scaling. They are listed in section 0 rather than deleted.
-5. M2 and M3 remain blocked on Tier B → the physics gate → one of three
-   paywalled papers. D3 remains open.
+5. **Synthetic data did not help.** M3, trained on 1000 physics-generated rows,
+   scores 9.77 % against M1's 7.93 % on the same real guns. The generator
+   reproduces the classical *iterative method* to 2.80 %, but that method is
+   itself 9.71 % away from measurement — so against the quantity the network has
+   to predict, the generator carries 10.48 %, and M3 learned that bias. Section
+   11. D3 remains open.
+
+---
+
+## 11. M1 versus M3 — does synthetic data help?
+
+**No. M3 is worse than M1 on real guns, and the reason is specific and
+instructive.**
+
+| | Trained on | Train MRE | Test MRE (7 real guns) | Test RMSE | Test R | Restart spread |
+|---|---|---|---|---|---|---|
+| **M1** | 23 real guns | 6.18 % | **7.93 %** | 3.81° | 0.9683 | 7.12 – 10.66 % |
+| **M3** | 23 real + 1000 synthetic | 0.91 % | **9.77 %** | 5.03° | 0.9674 | 9.71 – 10.90 % |
+
+M3's entire restart distribution sits above M1's median. This is not a close
+call and it is not noise: M3 is worse on five of the seven test guns.
+
+| Case | measured θ | M1 | error | M3 | error |
+|---|---|---|---|---|---|
+| 3 | 50.28 | 41.21 | −9.07 | 39.24 | **−11.04** |
+| 6 | 42.16 | 39.50 | −2.66 | 35.88 | **−6.28** |
+| 12 | 35.70 | 37.94 | +2.24 | 36.76 | +1.06 ✓ |
+| 15 | 30.00 | 30.08 | +0.08 | 27.15 | **−2.85** |
+| 17 | 29.04 | 30.36 | +1.32 | 26.78 | **−2.26** |
+| 26 | 17.00 | 19.12 | +2.12 | 16.72 | −0.28 ✓ |
+| 29 | 12.70 | 13.67 | +0.97 | 13.93 | +1.23 |
+
+### Why — and it is not the amount of data
+
+M3 fits its training set almost perfectly: 0.91 % train MRE against M1's 6.18 %,
+and its restart spread collapses from a range of 3.5 points to 1.2. A thousand
+extra rows did exactly what more data should do — it made the fit stable and
+well-determined. **It converged confidently on the wrong answer.**
+
+Look at the signs. M1's mean signed error on the test guns is −0.71°. M3's is
+**−2.92°** — a systematic under-prediction that M1 does not have.
+
+Now trace where that comes from:
+
+| | mean signed error | MRE |
+|---|---|---|
+| Our generator vs the published **iterative column** (C ≥ 8) | −0.35° | **2.80 %** |
+| The published **iterative column vs the measured angle** (C ≥ 8) | −1.91° | **9.71 %** |
+| Our generator vs the **measured angle** (C ≥ 8) | −2.26° | **10.48 %** |
+| M3 vs the measured angle (7 test guns) | −2.92° | 9.77 % |
+
+**The generator was validated against the wrong target.** The 2.80 % figure
+measures how well we reproduce `theta_iterative_deg` — the classical method's
+*own predictions*. But the network's job is to predict `theta_cone_deg`, the
+*measured* angle. And the classical iterative method is itself off by 9.71 % from
+measurement over this envelope.
+
+So the generator's error against the quantity the ANN actually has to predict is
+**10.48 %, not 2.80 %**. M3 inherited that bias almost exactly.
+
+### What this means for D9
+
+The arithmetic that justified lifting D4 does not survive this.
+
+D4's objection was that a generator carrying more error than the 3.74 % target
+cannot train a surrogate to reach it. D9 lifted that on the grounds that
+2.80 % < 3.74 %. **Those two percentages are measured against different
+reference quantities** — 2.80 % against the iterative method, 3.74 % against
+experiment — so the comparison does not hold. Measured like for like, the
+generator carries 10.48 % against experiment, and D4's objection applies exactly
+as originally written.
+
+The numbers quoted in the brief were all correct. The error was in comparing
+them.
+
+This is not hindsight: it is what M3 measured, which is why M3 was trained
+separately and tested on real guns only rather than folded into the headline.
+
+### What Tier B is still good for
+
+The rows are not worthless, but their use is narrower than intended:
+
+- **A fast surrogate of the classical iterative method.** Over C ≥ 8 the
+  generator reproduces it to 2.80 %, and a network trained on Tier B reproduces
+  the generator to 0.91 %. For NSGA-II, where 50 000 evaluations of the
+  *classical method* are needed and its disagreement with experiment is a
+  constant offset rather than a variable, that is a legitimate and useful
+  surrogate.
+- **Not** a route to better experimental-angle prediction. That would need a
+  generator validated against measurements, which would mean fixing the
+  aperture-lens physics rather than reproducing a method that is itself ~10 %
+  off.
+
+### What would actually help
+
+Not more synthetic rows. The honest routes are unchanged: more real guns, or a
+clean PDF of Vaughan 1981 / Tiwary & Basu 1987 / Yang 2006 to fix the physics
+against measurement rather than against another model's output.
+
+**M1 remains the headline model and is what the site reports.** It is trained on
+real guns only, and nothing in this section changes it.

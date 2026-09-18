@@ -259,6 +259,21 @@ better-scoring one.
 
 ## D9 — Tier B generated, over a restricted envelope. Partially reverses D4.
 
+> **OUTCOME, ADDED AFTER MEASURING IT: the justification below does not hold,
+> and M3 is worse than M1.** The 2.80 % figure measures agreement with the
+> published *iterative column*, while the 3.74 % it was compared against
+> measures agreement with *experiment*. Different reference quantities. Against
+> experiment the generator carries **10.48 %** over C ≥ 8, because the iterative
+> method is itself 9.71 % away from measurement there — so D4's arithmetic
+> objection applies exactly as originally written. M3 (9.77 %) duly lost to M1
+> (7.93 %) on the seven real test guns, with a mean signed error of −2.92°
+> against M1's −0.71°, inheriting the iterative method's own low bias.
+> Full analysis in `BENCHMARK.md` §11. The rows are kept, fully labelled, and
+> remain useful as a fast surrogate **of the iterative method** — which is what
+> they actually are. They are not a route to better experimental-angle
+> prediction. The reasoning below is left as written, because a decision log
+> that quietly edits itself into being right is worthless.
+
 **Decision.** 1000 synthetic rows were generated and merged, restricted to
 **C ≥ 8**. D4's blanket block on synthetic data is lifted *for that envelope
 only*. Everything D4 says about the full envelope still stands.

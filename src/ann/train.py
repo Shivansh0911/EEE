@@ -94,7 +94,24 @@ def cv_score(X, Y, cfg, seed, folds, rng_seed=0):
 def train_m1(cfg, args):
     root = ds.repo_root()
     df = ds.load(cfg=cfg)
-    train_df, test_df = ds.paper_split(df)
+
+    # M1 and M1-multi are defined as "trained on real guns", which since D9 has
+    # to be selected explicitly -- every Tier B row is beam_type=pencil, so the
+    # D7 filter no longer separates them. M3 adds the synthetic rows to TRAINING
+    # only; its test frame is the same seven real guns either way.
+    include_synthetic = args.model == "m3"
+    if include_synthetic:
+        train_df, test_df = ds.train_test_frames(df, include_synthetic=True)
+        n_real = int((train_df["tier"] == ds.LITERATURE_TIER).sum())
+        n_syn = len(train_df) - n_real
+        print(f"M3: training on {n_real} real + {n_syn} synthetic rows; "
+              f"testing on {len(test_df)} REAL held-out guns only")
+    else:
+        train_df, test_df = ds.paper_split(df)
+
+    assert (test_df["tier"] == ds.LITERATURE_TIER).all(), (
+        "a synthetic row reached the test split"
+    )
     ds.assert_no_test_leakage(train_df, test_df)
 
     X_tr, Y_tr = ds.matrices(train_df, cfg)
@@ -212,7 +229,13 @@ def train_m1(cfg, args):
         "metrics": blocks,
         "restart_spread": restart_spread,
         "theta": result.theta.tolist(),
-        "train_case_ids": [int(c) for c in train_df["source_case_id"]],
+        "n_train_rows": int(len(train_df)),
+        "n_real_train_rows": int((train_df["tier"] == ds.LITERATURE_TIER).sum()),
+        "n_synthetic_train": int((train_df["tier"] == "B_synthetic").sum()),
+        # Synthetic rows have no case id, and case ids identify published guns,
+        # so only the real ones are listed.
+        "train_case_ids": [int(c) for c in train_df.loc[
+            train_df["tier"] == ds.LITERATURE_TIER, "source_case_id"]],
         "test_case_ids": [int(c) for c in test_df["source_case_id"]],
         "predictions": {
             "train": P_tr.tolist(),
@@ -296,6 +319,8 @@ def warn_saturation(split, Pn, df, cfg):
 
 
 MODEL_TARGETS = {
+    # M3 predicts the same thing as M1; what differs is what it was trained on.
+    "m3": ["theta_cone_deg"],
     # M1 is the headline: theta only. The second output is carried by M1-multi,
     # because it measurably costs theta accuracy at 23 training rows (D3, and
     # section 7 of BENCHMARK.md) -- that cost is a finding to report, not a
@@ -326,8 +351,9 @@ def main(argv=None):
     p = argparse.ArgumentParser(description="Train the Pierce-gun surrogate.")
     p.add_argument("--model", default="m1",
                    choices=["m1", "m1-multi", "m2", "m3"],
-                   help="m1 = theta only (the headline replication); "
-                        "m1-multi = theta + Rc_mm (the multi-output deliverable)")
+                   help="m1 = theta, real guns only (the headline); "
+                        "m1-multi = theta + Rc_mm; "
+                        "m3 = theta, real + synthetic training, real test only")
     p.add_argument("--restarts", type=int, default=10)
     p.add_argument("--max-epochs", type=int, default=5000)
     p.add_argument("--cv-folds", type=int, default=5,
@@ -340,13 +366,21 @@ def main(argv=None):
     p.add_argument("--verbose", action="store_true")
     args = p.parse_args(argv)
 
-    if args.model in ("m2", "m3"):
+    if args.model == "m2":
         raise SystemExit(
-            f"{args.model.upper()} is not trainable. M3 needs Tier B, which has zero "
-            f"rows because the physics gate failed at MAE 1.66 deg / MRE 5.75 % "
-            f"against a required 0.5 deg / 1.5 % (see reports/VALIDATION_table2.md "
-            f"and D4). M2 is only meaningful as M3's control. Neither is faked here."
+            "M2 (all Tier A, held-out Tier A) is only meaningful as M3's control, "
+            "and M1 already occupies that role -- it is trained on real guns only "
+            "and tested on the same seven held-out guns as M3. Train m1 and m3 and "
+            "compare those."
         )
+    if args.model == "m3":
+        tb = os.path.join(ds.repo_root(), "data", "processed", "dataset_tier_b.csv")
+        if not os.path.exists(tb):
+            raise SystemExit(
+                "M3 needs Tier B. Generate it first:\n"
+                "    python -m src.data.synth_generator --n 1000\n"
+                "    python src/data/build_master.py"
+            )
 
     cfg = build_config(args)
     result, cfg, x_scaler, y_scaler, blocks, run = train_m1(cfg, args)
@@ -384,10 +418,11 @@ def main(argv=None):
         provenance = {
             "model_id": args.model.upper(),
             "trained_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
-            "n_train": len(run["train_case_ids"]),
+            "n_train": run["n_train_rows"],
+            "n_real_train": run["n_real_train_rows"],
             "n_test": len(run["test_case_ids"]),
             "tier_a_rows": 30,
-            "tier_b_rows": 0,
+            "tier_b_rows": int(run.get("n_synthetic_train", 0)),
             "tier_c_rows": 0,
             "split": "paper's own 23/7 (Table 2 asterisked cases as test)",
             "seed": run["seed"],

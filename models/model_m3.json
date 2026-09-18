@@ -1,0 +1,168 @@
+{
+  "schema_version": 2,
+  "architecture": [
+    3,
+    3,
+    2,
+    1
+  ],
+  "activation": "tanh",
+  "output_activation": "tanh",
+  "weights": {
+    "W1": [
+      [
+        -0.17903919921925004,
+        0.7428405345318152,
+        1.083983047252203
+      ],
+      [
+        0.012577053938125193,
+        -0.0008613750289337614,
+        0.0011481038294199055
+      ],
+      [
+        1.409535801356078,
+        -0.05379376575226968,
+        1.0622221102476352
+      ]
+    ],
+    "b1": [
+      0.5639125950948685,
+      4.136824246355827,
+      -4.735542556567984
+    ],
+    "W2": [
+      [
+        0.2517763066847598,
+        0.32222252061443507
+      ],
+      [
+        342.9872825665757,
+        837.9775368889199
+      ],
+      [
+        1024.5358184778527,
+        207.03288773936552
+      ]
+    ],
+    "b2": [
+      685.5526259851845,
+      -635.0929638405491
+    ],
+    "W3": [
+      [
+        529.6962946715907
+      ],
+      [
+        757.5572820410788
+      ]
+    ],
+    "b3": [
+      227.95861788111193
+    ]
+  },
+  "input_transform": {
+    "C": "log"
+  },
+  "scaler": {
+    "x_min": [
+      0.3,
+      0.5005,
+      1.6331544390514163
+    ],
+    "x_max": [
+      3.6993,
+      4.4988,
+      5.765569714487968
+    ],
+    "y_min": [
+      9.8
+    ],
+    "y_max": [
+      71.937
+    ],
+    "note": "fitted on training rows only; x ranges are in transformed space, so input_transform must be applied first"
+  },
+  "inputs": [
+    "perveance_uperv",
+    "rw_mm",
+    "C"
+  ],
+  "targets": [
+    "theta_cone_deg"
+  ],
+  "training_envelope": {
+    "perveance_uperv": [
+      0.3,
+      3.6993
+    ],
+    "rw_mm": [
+      0.5005,
+      4.4988
+    ],
+    "C": [
+      5.119999999999999,
+      319.1208000000001
+    ]
+  },
+  "target_envelope": {
+    "theta_cone_deg": [
+      9.8,
+      71.937
+    ]
+  },
+  "residual_weights": [
+    1.0
+  ],
+  "saturation_limit": 0.98,
+  "metrics": {
+    "selected": {
+      "train_mre_pct": {
+        "theta_cone_deg": 0.9098004172966422
+      },
+      "test_mre_pct": {
+        "theta_cone_deg": 9.771810103317526
+      },
+      "test_rmse": {
+        "theta_cone_deg": 5.0300949990507755
+      },
+      "test_pearson_r": {
+        "theta_cone_deg": 0.9673582296932581
+      }
+    },
+    "restart_distribution": {
+      "n_restarts": 10,
+      "target": "theta_cone_deg",
+      "test_mre_pct_min": 9.713365518208224,
+      "test_mre_pct_median": 9.899222010523747,
+      "test_mre_pct_max": 10.895792097821458,
+      "corr_cv_vs_test_mre": 0.4633466162736987
+    },
+    "paper_reference": {
+      "train_mre_pct": 2.18,
+      "test_mre_pct": 3.74,
+      "train_rmse_deg": 0.95,
+      "test_rmse_deg": 2.09,
+      "train_pearson_r": 0.997,
+      "test_pearson_r": 0.99,
+      "note": "Panahi et al. 2025, as printed; recomputed from Table 2 to train 2.1870 / test 3.7437"
+    }
+  },
+  "provenance": {
+    "model_id": "M3",
+    "trained_at": "2026-09-18T07:12:21+05:30",
+    "n_train": 1023,
+    "n_real_train": 23,
+    "n_test": 7,
+    "tier_a_rows": 30,
+    "tier_b_rows": 1000,
+    "tier_c_rows": 0,
+    "split": "paper's own 23/7 (Table 2 asterisked cases as test)",
+    "seed": 102,
+    "restarts": 10,
+    "selection": "5-fold CV within the 23 training rows; test rows unused",
+    "dataset": "data/processed/dataset_master.csv",
+    "input_transform_note": "C is log-scaled before min-max; see D8",
+    "exported_at": "2026-09-18T07:12:21+05:30"
+  }
+}

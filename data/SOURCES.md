@@ -137,9 +137,26 @@ Against the 30 published cases in Panahi et al. Table 2:
 A leave-one-out refit of the model's one free coefficient gives 0.92° / 2.89 %
 out of sample, so the in-sample figure is optimistic by about 0.07°.
 
-**2.80 % is the number that matters**, because the paper's own ANN reports a
-3.74 % test error. A generator carrying more error than that could not help a
-model beat it. This one carries less — inside its envelope, and only there.
+**Read that table carefully: 2.80 % is agreement with the classical ITERATIVE
+METHOD, not with measurement.** That distinction was missed when this tier was
+commissioned and it turned out to matter:
+
+| Over C ≥ 8 | MAE | MRE |
+|---|---|---|
+| our model vs the published iterative column | 0.85° | 2.80 % |
+| the published iterative column vs the **measured** angle | 2.59° | 9.71 % |
+| **our model vs the measured angle** | **3.07°** | **10.48 %** |
+
+A network trained on these rows is learning to predict what the iterative method
+would say, and the iterative method is about 10 % away from what the guns
+actually measured. A model trained on Tier B (M3) duly scored 9.77 % on real
+held-out guns against 7.93 % for the same model trained on real data alone.
+See `reports/BENCHMARK.md` §11.
+
+These rows remain a good surrogate **of the iterative method**, which is a
+legitimate use — it is what a multi-objective optimizer needs when it must
+evaluate the classical synthesis 50 000 times. They are not a route to better
+experimental-angle prediction.
 
 Every single row carries `generator_mre_pct = 2.80` and
 `generator_envelope = "C >= 8"`, so this can be read off any row without opening

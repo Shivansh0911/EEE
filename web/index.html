@@ -109,9 +109,9 @@
 <!-- ============================ DATASET ============================ -->
 <section role="tabpanel" id="panel-dataset" aria-labelledby="tab-dataset" hidden>
   <h2>Dataset</h2>
-  <p class="lede">Thirty real guns, every one traceable to a printed table in a
-    published paper. Nothing here was invented, estimated, or produced by a
-    language model from memory.</p>
+  <p class="lede" id="ds-lede"></p>
+
+  <div class="msg warn" id="ds-headline" style="font-size:.9rem"></div>
 
   <div class="stats" id="ds-stats"></div>
 
@@ -120,13 +120,18 @@
     <div id="ds-provenance"></div>
   </div>
 
-  <h3>All 30 rows</h3>
+  <h3 id="ds-table-heading">All rows</h3>
   <div class="filters">
     <input type="search" id="ds-search" placeholder="Filter — case number, source, reference…" aria-label="Filter rows">
-    <select id="ds-split" aria-label="Filter by split">
+    <select id="ds-tier" aria-label="Filter by tier">
       <option value="">All rows</option>
-      <option value="train">Training rows (23)</option>
-      <option value="test">Test rows (7)</option>
+      <option value="A_literature">Real guns only (Tier A)</option>
+      <option value="B_synthetic">Physics-generated only (Tier B)</option>
+    </select>
+    <select id="ds-split" aria-label="Filter by split">
+      <option value="">Train and test</option>
+      <option value="train">Training rows</option>
+      <option value="test">Test rows — always real</option>
     </select>
     <span class="muted" id="ds-count"></span>
   </div>

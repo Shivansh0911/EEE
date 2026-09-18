@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "note": "fitted on training rows only; reused verbatim for test and inference",
+  "inputs": [
+    "perveance_uperv",
+    "rw_mm",
+    "C"
+  ],
+  "targets": [
+    "theta_cone_deg"
+  ],
+  "x_min": [
+    0.3,
+    0.5005,
+    1.6331544390514163
+  ],
+  "x_max": [
+    3.6993,
+    4.4988,
+    5.765569714487968
+  ],
+  "y_min": [
+    9.8
+  ],
+  "y_max": [
+    71.937
+  ]
+}
