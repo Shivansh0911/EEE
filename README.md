@@ -7,8 +7,11 @@ deployed web tool. Extends Panahi et al., *Results in Physics* **73** (2025) 108
 
 | | URL |
 |---|---|
-| Web tool (Netlify) | *not deployed yet — filled in at P9* |
-| API (Render) | *not deployed yet — filled in at P9* |
+| Web tool (Netlify) | *not deployed yet — drag `web/` onto <https://app.netlify.com/drop>, then paste the URL here. See `reports/DEPLOYMENT.md`.* |
+| API (Render) | *not built — prediction is client-side; the API is only needed for NSGA-II (P6)* |
+
+**To see it now without deploying anything: open `web/index.html` in a browser.**
+It is a static page with no build step and no network calls.
 
 ---
 
@@ -42,6 +45,8 @@ This project does three things with that result:
 | `reports/DECISIONS.md` | Every judgement call with reasoning (D1–D7). Becomes the methodology section. |
 | `reports/VALIDATION_table2.md` | The physics validation result and why Tier B is blocked |
 | `reports/BENCHMARK.md` | M1 against the paper's numbers, and the evidence for why they differ |
+| `reports/DEPLOYMENT.md` | How to put the site live — drag and drop, about a minute |
+| `web/` | The static site. Open `web/index.html`. |
 | `data/processed/dataset_literature.csv` | Tier A — 30 verified rows, 23 columns |
 | `data/processed/dataset_master.csv` | The training dataset: Tier A plus derived targets |
 
