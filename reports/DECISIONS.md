@@ -99,7 +99,7 @@ of one, and θ accuracy is worse for it. See `reports/BENCHMARK.md`.
 
 **Switching readings** is `DEFAULT_TARGETS` in `src/ann/config.py`, plus the
 column existing in the dataset. Reading A means `targets=["theta_cone_deg"]` and
-n_out drops to 1 (24 parameters). Reading B becomes available the moment the D4
+n_out drops to 1 (23 parameters). Reading B becomes available the moment the D4
 gate passes.
 
 **Note on naming.** `rc_mm` (lower case) already existed and is the cathode *disc*

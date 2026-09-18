@@ -41,7 +41,9 @@ This project does three things with that result:
 | `data/SOURCES.md` | Provenance ledger — where every row came from, including papers we could not get |
 | `reports/DECISIONS.md` | Every judgement call with reasoning (D1–D7). Becomes the methodology section. |
 | `reports/VALIDATION_table2.md` | The physics validation result and why Tier B is blocked |
+| `reports/BENCHMARK.md` | M1 against the paper's numbers, and the evidence for why they differ |
 | `data/processed/dataset_literature.csv` | Tier A — 30 verified rows, 23 columns |
+| `data/processed/dataset_master.csv` | The training dataset: Tier A plus derived targets |
 
 Open Claude Code in this folder and work through P0–P10 in order. The gates exist
 to stop bad work propagating.
@@ -133,6 +135,12 @@ electron-gun-moo/
 - Provenance exact: cases 1, 2, 9, 12, 25, 29 from refs [14,18,19], rest from [19].
 - Langmuir–Blodgett solver: ODE `3αα'' + α'² + 3αα' = 1`, derived from Poisson's
   equation, reproduces the classical series to ~1e-9. **Reusable as-is.**
+- ANN package (`src/ann/`): from-scratch NumPy, 3-3-2-2 tansig, 26 parameters,
+  Levenberg–Marquardt with an **analytic Jacobian** verified against finite
+  differences to < 1e-6. Nguyen–Widrow restarts, per-output residual weights,
+  saturation warnings, train-only scaler. 46 tests pass.
+- M1 trained on the paper's own 23/7 split, figures 3–6 reproduced, model
+  exported to `models/model_m1.json` in the B.3 schema.
 
 **Found along the way**
 
@@ -148,6 +156,16 @@ electron-gun-moo/
   0.62 ≈ 2/3, exactly twice the thin-lens 1/3.
 - **Tier B not generated. Zero synthetic rows.** Deliberate — see the tier table
   above and D4.
+- **M2 and M3 not trained.** M3 needs Tier B; M2 exists only as M3's control, so
+  training it alone yields a number with nothing to compare it to.
+- **M1 does not reproduce the paper's test accuracy** — 17.27 % test MRE against
+  the paper's 3.74 %. The dataset and metric code are verified correct (the
+  paper's own reported numbers recompute exactly from our Tier A columns), and
+  the cause is that 30 rows cannot support 26 parameters: test MRE varies from
+  8 % to 42 % across initialisations and no selection signal available within 23
+  rows can pick the good ones. Full evidence in `reports/BENCHMARK.md`. Not
+  tuned to look better, because the only thing left to tune against is the
+  seven-gun test set that is also the reported result.
 - **Unblock:** a clean PDF of Vaughan 1981, Tiwary & Basu 1987, or Yang 2006. All
   paywalled at IEEE; a university library login is the fastest route.
 
@@ -173,8 +191,12 @@ Rebuild the artefacts, in dependency order:
 
 ```bash
 python src/data/build_tier_a.py      # 30-row Tier A set from the verbatim PDF text
+python src/data/build_master.py      # adds the derived targets -> dataset_master.csv
 python src/physics/probe_closure.py  # rerun the physics gate sweep (expects FAIL)
-pytest                               # physics benchmark, Jacobian, parity, API
+python -m src.ann.train --model m1 --export models/model_m1.json
+python -m src.ann.figures            # paper figures 3-6 -> reports/figures/
+python -m src.ann.experiments        # the supporting measurements in BENCHMARK.md
+pytest                               # Jacobian, scaler, data contracts, export
 ```
 
 `build_tier_a.py` reads a verbatim text block committed inside the script rather
