@@ -84,6 +84,7 @@ def build_dataset(df):
         "generated_from": "data/processed/dataset_master.csv",
         "n_rows": len(rows),
         "columns": list(df.columns),
+        "rows": rows,
         "provenance": {
             "tier_a_rows": int((df["tier"] == "A_literature").sum()),
             "tier_b_rows": 0,
@@ -123,6 +124,46 @@ def build_dataset(df):
     }
 
 
+def build_lb_table(n=1501, gamma_max=3.0):
+    """
+    The Langmuir-Blodgett alpha function, tabulated for the browser.
+
+    alpha solves  3*a*a'' + a'^2 + 3*a*a' = 1,  a(0)=0, a'(0)=1, derived from
+    Poisson's equation for spherically convergent space-charge-limited flow. Our
+    integration of it reproduces the classical series to ~1e-9, and it is the one
+    piece of the physics engine that passed its check (D4) -- the aperture-lens
+    closure is what failed.
+
+    A table rather than a series because the classical series diverges well
+    before gamma = 3, and a table straight off the verified ODE cannot drift
+    away from the Python implementation the way a re-derived series could.
+
+    The gun drawing uses it to place the anode: given theta and P,
+        alpha(gamma)^2 = 29.33 * (1 - cos theta) / P,
+    solved for gamma = ln(Rc/Ra).
+    """
+    import numpy as np
+    from ..physics.probe_closure import alpha_and_deriv
+
+    gammas = np.linspace(0.0, gamma_max, n)
+    alphas = [0.0]
+    for g in gammas[1:]:
+        a, _ = alpha_and_deriv(float(g))
+        alphas.append(float(a))
+
+    return {
+        "note": ("alpha(gamma) for spherical space-charge-limited flow, from the "
+                 "ODE 3*a*a'' + a'^2 + 3*a*a' = 1 integrated in src/physics/"
+                 "probe_closure.py. Verified against the classical Langmuir-"
+                 "Blodgett series to ~1e-9."),
+        "equation": "P_uperv = 29.33 * (1 - cos theta) / alpha(gamma)^2",
+        "gamma_min": 0.0,
+        "gamma_max": float(gamma_max),
+        "n": int(n),
+        "alpha": [round(a, 10) for a in alphas],
+    }
+
+
 def build_benchmark(root):
     """The numbers the Results tab quotes, straight from the run artefacts."""
     out = {}
@@ -132,12 +173,24 @@ def build_benchmark(root):
             continue
         with open(path, encoding="utf-8") as f:
             run = json.load(f)
+        # Reshape the run artefact's per-split blocks into the same "selected"
+        # shape the model JSON uses, so the page reads one structure rather than
+        # two that happen to share a key name.
+        tgts = run["config"]["targets"]
+        selected = {
+            "train_mre_pct": {k: run["metrics"]["train"][k]["mre_pct"] for k in tgts},
+            "test_mre_pct": {k: run["metrics"]["test"][k]["mre_pct"] for k in tgts},
+            "train_rmse": {k: run["metrics"]["train"][k]["rmse"] for k in tgts},
+            "test_rmse": {k: run["metrics"]["test"][k]["rmse"] for k in tgts},
+            "train_pearson_r": {k: run["metrics"]["train"][k]["pearson_r"] for k in tgts},
+            "test_pearson_r": {k: run["metrics"]["test"][k]["pearson_r"] for k in tgts},
+        }
         out[model_id] = {
-            "targets": run["config"]["targets"],
+            "targets": tgts,
             "n_params": run["n_params"],
             "seed": run["seed"],
             "epochs_run": run["epochs_run"],
-            "metrics": run["metrics"],
+            "metrics": {"selected": selected, "by_split": run["metrics"]},
             "test_case_ids": run["test_case_ids"],
             "predictions_test": run["predictions"]["test"],
             "truth_test": run["truth"]["test"],
@@ -180,6 +233,7 @@ def main():
     df = pd.read_csv(ds.default_path())
     write_pair(web, "dataset", build_dataset(df), "dataset")
     write_pair(web, "benchmark", build_benchmark(root), "benchmark")
+    write_pair(web, "lb_alpha", build_lb_table(), "lbAlpha")
 
     # The models, copied verbatim so the site and the repo cannot drift apart.
     for src_name, js_key in (("model_m1.json", "model"),

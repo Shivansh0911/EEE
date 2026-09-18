@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pierce Gun ANN — research results</title>
+<meta name="description" content="A neural-network surrogate for the half-beam cone angle of a Pierce electron gun, with the dataset, the benchmark against Panahi et al. 2025, and the limitations.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <h1>Half-beam cone angle of a Pierce electron gun — an ANN surrogate</h1>
+    <p class="sub">A from-scratch neural network trained on 30 real guns, with the
+      benchmark, the dataset provenance and the method.</p>
+    <p class="cite">Replication and extension of Panahi et al., <em>Results in Physics</em>
+      <strong>73</strong> (2025) 108256.</p>
+
+    <div class="banner-research">
+      <span>⚠</span>
+      <div>
+        <strong>This is a research result, not a design tool.</strong>
+        The model's median error on held-out guns is about 8 % — roughly ±2.7° on a
+        34° angle. It is here to show what a 23-row training set can and cannot
+        support. <strong>Do not use it to dimension real hardware.</strong>
+      </div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="tab-predict" aria-controls="panel-predict" aria-selected="true">Predict</button>
+      <button role="tab" id="tab-dataset" aria-controls="panel-dataset" aria-selected="false">Dataset</button>
+      <button role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false">Results</button>
+      <button role="tab" id="tab-method"  aria-controls="panel-method"  aria-selected="false">Method</button>
+      <button role="tab" id="tab-about"   aria-controls="panel-about"   aria-selected="false">About</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============================ PREDICT ============================ -->
+<section role="tabpanel" id="panel-predict" aria-labelledby="tab-predict">
+  <h2>Predict</h2>
+  <p class="lede">Three design inputs in, the half-beam cone angle out. The whole
+    model is 23 numbers and three matrix multiplications, so it runs here in the
+    page — nothing is sent anywhere, and this works offline.</p>
+
+  <div class="grid predict">
+    <div class="card">
+      <div class="control">
+        <div class="control-head">
+          <label for="in-P">Perveance <span class="unit">P, µperv</span></label>
+          <input type="number" id="in-P" step="0.01" min="0.01">
+        </div>
+        <input type="range" id="sl-P" min="0" max="1000" value="500" aria-label="Perveance slider">
+        <div class="range-scale"><span id="sc-P-lo"></span><span id="sc-P-hi"></span></div>
+      </div>
+
+      <div class="control">
+        <div class="control-head">
+          <label for="in-rw">Beam waist radius <span class="unit">r_w, mm</span></label>
+          <input type="number" id="in-rw" step="0.01" min="0.01">
+        </div>
+        <input type="range" id="sl-rw" min="0" max="1000" value="500" aria-label="Beam waist radius slider">
+        <div class="range-scale"><span id="sc-rw-lo"></span><span id="sc-rw-hi"></span></div>
+      </div>
+
+      <div class="control">
+        <div class="control-head">
+          <label for="in-C">Convergence ratio <span class="unit">C, dimensionless — log slider</span></label>
+          <input type="number" id="in-C" step="0.01" min="0.5">
+        </div>
+        <input type="range" id="sl-C" min="0" max="1000" value="500" aria-label="Convergence ratio slider, logarithmic">
+        <div class="range-scale"><span id="sc-C-lo"></span><span id="sc-C-hi"></span></div>
+      </div>
+
+      <div class="btn-row" id="preset-row"></div>
+    </div>
+
+    <div>
+      <div class="readout">
+        <div class="label">Predicted half-beam cone angle θ</div>
+        <div class="value"><span id="out-theta">—</span><span class="band" id="out-band"></span></div>
+        <div class="band-note" id="out-band-note"></div>
+      </div>
+
+      <div id="messages"></div>
+
+      <figure class="figure">
+        <svg id="gun-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <figcaption id="gun-caption"></figcaption>
+      </figure>
+
+      <div class="card" style="margin-top:20px">
+        <h3 style="margin-top:0">Geometry that follows from θ</h3>
+        <div class="rows" id="geom-rows"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <h3 style="margin-top:0">Comparison</h3>
+        <div id="compare-body"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ DATASET ============================ -->
+<section role="tabpanel" id="panel-dataset" aria-labelledby="tab-dataset" hidden>
+  <h2>Dataset</h2>
+  <p class="lede">Thirty real guns, every one traceable to a printed table in a
+    published paper. Nothing here was invented, estimated, or produced by a
+    language model from memory.</p>
+
+  <div class="stats" id="ds-stats"></div>
+
+  <div class="card" style="margin-top:20px">
+    <h3 style="margin-top:0">Provenance</h3>
+    <div id="ds-provenance"></div>
+  </div>
+
+  <h3>All 30 rows</h3>
+  <div class="filters">
+    <input type="search" id="ds-search" placeholder="Filter — case number, source, reference…" aria-label="Filter rows">
+    <select id="ds-split" aria-label="Filter by split">
+      <option value="">All rows</option>
+      <option value="train">Training rows (23)</option>
+      <option value="test">Test rows (7)</option>
+    </select>
+    <span class="muted" id="ds-count"></span>
+  </div>
+  <div class="table-scroll">
+    <table id="ds-table">
+      <thead><tr id="ds-head"></tr></thead>
+      <tbody id="ds-body"></tbody>
+    </table>
+  </div>
+  <p class="note" id="ds-footnote"></p>
+</section>
+
+<!-- ============================ RESULTS ============================ -->
+<section role="tabpanel" id="panel-results" aria-labelledby="tab-results" hidden>
+  <h2>Results</h2>
+  <p class="lede">We do not reproduce the paper's reported test accuracy. That is
+    the first thing on this page rather than the last.</p>
+
+  <div class="card" id="headline-card"></div>
+
+  <h3>The result is a distribution, not a number</h3>
+  <div id="dist-body"></div>
+
+  <figure class="report">
+    <img src="figures/fig7_restart_histogram.png" alt="Histogram of test MRE across 30 restarts for both models, with the paper's 3.74 % marked by a dashed line. Both distributions sit well to the right of it.">
+    <figcaption>Fig. 7 — test MRE across 30 Nguyen–Widrow restarts of the same
+      code, data and protocol. The dashed line is the paper's reported 3.74 %.</figcaption>
+  </figure>
+
+  <h3>What we conclude, and what we do not</h3>
+  <div id="repro-body"></div>
+
+  <h3>Benchmark table</h3>
+  <div class="table-scroll"><table class="plain" id="bench-table"></table></div>
+  <p class="note">The paper's row is not quoted from its prose — it is recomputed
+    from the ANN column of our own extraction of Table 2, and lands on
+    train 2.1870 % / test 3.7437 %, RMSE 0.959 / 2.093, R 0.997 / 0.990. That it
+    matches the printed values to the digit is what verifies our dataset, split
+    and metric code.</p>
+
+  <h3>Per-gun test error</h3>
+  <div class="table-scroll"><table class="plain" id="percase-table"></table></div>
+  <p class="note" id="percase-note"></p>
+
+  <h3>Reproduced figures</h3>
+  <div class="grid two">
+    <figure class="report">
+      <img src="figures/fig3_regression_train.png" alt="Predicted against experimental cone angle for the 23 training guns, with the y equals x line. Points lie close to the diagonal.">
+      <figcaption>Fig. 3a — training regression.</figcaption>
+    </figure>
+    <figure class="report">
+      <img src="figures/fig3_regression_test.png" alt="Predicted against experimental cone angle for the 7 held-out test guns, with the y equals x line.">
+      <figcaption>Fig. 3b — test regression. The point furthest below the diagonal
+        is case 3, the highest-angle gun, which the paper's own network also
+        under-predicts.</figcaption>
+    </figure>
+  </div>
+  <figure class="report">
+    <img src="figures/fig4_mse_vs_epochs.png" alt="Training and cross-validation mean squared error against epoch on a logarithmic axis. Training error falls steadily while validation error bottoms out early and then rises.">
+    <figcaption>Fig. 4 — the overfitting, directly. Training MSE keeps falling;
+      the cross-validation curve bottoms early and then climbs. Everything after
+      that minimum is the network fitting noise, which is why the shipped model
+      is stopped after a handful of epochs.</figcaption>
+  </figure>
+  <figure class="report">
+    <img src="figures/fig5_method_comparison.png" alt="All four synthesis methods plotted against the experimental cone angle for the 30 guns, ordered by experimental angle.">
+    <figcaption>Fig. 5 — every method against experiment, across all 30 guns.
+      Shaded columns are the seven test cases; the other 23 are training points
+      for this model, and are not evidence of generalisation.</figcaption>
+  </figure>
+  <figure class="report">
+    <img src="figures/fig6_percentage_error.png" alt="Signed percentage error in cone angle for each method across the 30 guns.">
+    <figcaption>Fig. 6 — signed percentage error. The non-iterative method's
+      consistent negative bias is visible as a band well below zero.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ METHOD ============================ -->
+<section role="tabpanel" id="panel-method" aria-labelledby="tab-method" hidden>
+  <h2>Method</h2>
+  <p class="lede">Everything here is implemented from scratch in NumPy — the
+    forward pass, the Jacobian and the optimizer. No Keras, no PyTorch. The
+    hand-written versions are the point.</p>
+
+  <h3>The network</h3>
+  <figure class="figure">
+    <svg id="arch-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <figcaption>3 → 3 → 2 → 1, tanh throughout. Every arrow is one weight; every
+      neuron also carries a bias.</figcaption>
+  </figure>
+
+  <div id="method-arch"></div>
+
+  <h3>Why a neural network at all</h3>
+  <p class="note">Not "because it is accurate" — the honest answer is speed inside
+    an optimisation loop. A multi-objective search with a population of 100 over
+    500 generations is 50 000 evaluations of θ. The classical iterative method
+    takes milliseconds per call, which is fine once and fatal 50 000 times. The
+    trained network is 23 numbers and three matrix multiplications: microseconds.
+    The technical name for its role is a <strong>surrogate model</strong> — a
+    cheap, differentiable stand-in for an expensive evaluator.</p>
+
+  <h3>Input scaling, and the one choice that mattered</h3>
+  <p class="note">Inputs are min-max scaled to [−1, 1] using ranges taken from the
+    <em>training rows only</em>, so no test information leaks into training. Before
+    that, C is replaced by ln C.</p>
+  <p class="note">That last step is not cosmetic. C spans 5.12 to 306.3, a factor
+    of 60, and under linear scaling 25 of the 30 guns fall into the bottom 15 % of
+    the range — the network sees almost every gun pressed against one end of the
+    axis. ln C is also the coordinate the physics is written in: the synthesis
+    enters through γ = ln(R_c/R_a). Making that change roughly halved the test
+    error and collapsed the run-to-run spread. One held-out gun, case 12 at
+    C = 111, went from +30.2° of error to +2.2°.</p>
+
+  <h3>Levenberg–Marquardt, in plain language</h3>
+  <p class="note">With 23 parameters this is a small non-linear least-squares
+    problem. Gradient descent is safe but slow and zig-zags down narrow valleys.
+    Gauss–Newton assumes the error surface is a quadratic bowl and jumps straight
+    to its bottom — fast near a solution, divergent far from one. Levenberg–
+    Marquardt blends the two with a damping parameter µ:</p>
+  <div class="eq">(JᵀJ + µI) δ = −Jᵀe</div>
+  <ul class="tight">
+    <li><strong>Large µ</strong> — the µI term dominates, the step shrinks and
+      aligns with −Jᵀe. That is gradient descent: cautious.</li>
+    <li><strong>Small µ</strong> — the equation reduces to Gauss–Newton: big,
+      well-aimed jumps. Aggressive.</li>
+    <li><strong>µ adapts itself.</strong> A step that lowered the error is
+      accepted and µ is divided by 10 — be bolder. A step that raised it is
+      rejected and µ multiplied by 10 — be cautious — and retried. There is no
+      learning rate to tune, which is why the paper used it and why MATLAB calls
+      it <code>trainlm</code>.</li>
+    <li><strong>It does not scale.</strong> JᵀJ is 23×23 here; for a deep network
+      it would be millions squared. Knowing when LM is the right tool, and when
+      it is not, is most of the point of implementing it.</li>
+  </ul>
+
+  <h3>The Jacobian — the strongest artefact in the repository</h3>
+  <p class="note">The Jacobian has one row per residual and one column per
+    parameter. J[i][j] answers: if I nudge parameter j, how much does residual i
+    change? It is a local sensitivity map, and it is what lets LM aim.</p>
+  <p class="note">Ordinary backpropagation sums every residual's derivative into
+    one gradient vector, which is all gradient descent needs. Least-squares needs
+    them kept apart, so ours backpropagates each residual separately. That is a
+    derivation done on paper and then typed in — exactly the kind of code that
+    can be subtly wrong and still appear to train, because a sign error just
+    makes convergence worse rather than obviously broken.</p>
+  <div class="msg info">
+    <span class="tag">verified</span>
+    <div>The analytic Jacobian is checked against central finite differences and
+      agrees to <strong>&lt; 1×10⁻⁶</strong> — across 20 random parameter draws,
+      one, two and three outputs, and both output activations. Finite differences
+      are slow and inelegant but involve no derivation at all, which is what makes
+      them a valid witness. That test is
+      <code>tests/test_jacobian.py</code>.</div>
+  </div>
+  <div class="msg info">
+    <span class="tag">verified</span>
+    <div>The JavaScript running on this page is checked against the Python
+      implementation to <strong>&lt; 1×10⁻⁹</strong> on 100 random inputs, under
+      Node, using the same model file the browser loads. Two implementations
+      drift, and when they drift the symptom is a plausible wrong number on
+      screen rather than an error. <code>tests/test_js_python_parity.py</code>.</div>
+  </div>
+
+  <h3>The physics</h3>
+  <p class="note">A Pierce gun is synthesised from the perveance P, the beam waist
+    radius r_w and the convergence ratio C. Given the cone half-angle θ, the rest
+    of the geometry is exact algebra:</p>
+  <div class="eq">eq (2)   r_c = √C · r_w<br>eq (4)   R_c = r_c / sin θ</div>
+  <p class="note">Finding θ in the first place is the hard part. It comes from
+    spherically convergent, space-charge-limited flow — the Langmuir–Blodgett
+    problem. Starting from Poisson's equation, the radial flow function α obeys</p>
+  <div class="eq">3αα″ + α′² + 3αα′ = 1,   α(0) = 0,  α′(0) = 1</div>
+  <p class="note">and the diode relation closes it:</p>
+  <div class="eq">P = 29.33 (1 − cos θ) / α(γ)²,   γ = ln(R_c/R_a)</div>
+  <div class="msg info">
+    <span class="tag">verified</span>
+    <div>Our integration of that ODE reproduces the classical Langmuir–Blodgett
+      series to <strong>~1×10⁻⁹</strong>. It is what places the anode in the
+      drawing on the Predict tab.</div>
+  </div>
+  <div class="msg warn">
+    <span class="tag">failed</span>
+    <div>The <em>full</em> closure did not pass. Adding the anode-aperture lens
+      term and solving for θ reproduces the paper's iterative column only to
+      MAE 1.66° / MRE 5.75 %, against a required 0.5° / 1.5 %. The residuals are
+      structured rather than random, which localises the failure to the aperture
+      term. <strong>No correction factors were fitted to force a pass</strong> —
+      tuning parameters against the same 30 points that constitute the benchmark
+      would turn a validation into a curve fit. The consequence is that no
+      synthetic training data exists.</div>
+  </div>
+</section>
+
+<!-- ============================ ABOUT ============================ -->
+<section role="tabpanel" id="panel-about" aria-labelledby="tab-about" hidden>
+  <h2>About, and what this cannot do</h2>
+  <p class="lede">The limitations are not a disclaimer at the bottom of the page.
+    They are the result.</p>
+
+  <h3>Limitations, in full</h3>
+  <ul class="tight">
+    <li><strong>23 training rows against 23 parameters.</strong> There are about
+      as many free parameters as data points. Given enough epochs the network
+      interpolates the training set exactly — memorisation, not learning. The
+      shipped model is deliberately stopped after a handful of epochs, at a budget
+      chosen by cross-validation inside the training rows.</li>
+    <li><strong>A tanh output cannot extrapolate.</strong> The output layer is
+      tanh over min-max scaled targets, so it asymptotes at ±1, which maps back to
+      the edge of the training range. It is structurally incapable of predicting
+      an angle outside the range it was trained on, and it compresses hardest near
+      that edge. The paper's own largest test error is this failure, on the same
+      gun that is ours. This is measurable rather than theoretical: swept over
+      inputs far outside the envelope — P from 0.005 to 20 µperv, C from 0.6 to
+      5000 — the shipped model's output never leaves
+      <strong>10.6° – 68.0°</strong>, against a training target range of
+      9.8° – 70.0°. It cannot produce an answer outside that band no matter what
+      you ask it.</li>
+    <li><strong>Run-to-run variance is large.</strong> Across 30 restarts of
+      identical code and data, test error ranged from 3 % to over 100 %. A single
+      number from one run does not identify this model, which is why the Results
+      tab quotes a median and a range.</li>
+    <li><strong>The physics gate failed.</strong> Our implementation of the
+      classical synthesis reproduces the paper's iterative column only to
+      MAE 1.66°, against a required 0.5°. <strong>So no synthetic data was
+      generated — zero rows.</strong> A generator carrying 5.75 % of its own error
+      cannot train a surrogate to beat 3.74 %; the network would faithfully learn
+      the generator's bias, and a thousand such rows would make the model worse on
+      real guns while making the dataset look more impressive.</li>
+    <li><strong>The second output is unresolved.</strong> The brief asked for the
+      "half-beam convergence angle", but the column bearing that name holds the
+      convergence <em>ratio</em> C, which is dimensionless and not an angle. Three
+      readings remain live and the supervisor has to pick one. The placeholder
+      currently shipped, R_c, is a deterministic function of the inputs and θ, so
+      it exercises the multi-output machinery but adds no independent
+      information.</li>
+    <li><strong>Pencil beams only.</strong> Solid, axially symmetric, circular
+      cross-section. Sheet-beam, annular / magnetron-injection and multi-beam guns
+      are out of scope — the spherical formulation assumes circular symmetry. The
+      danger is that such a row would look entirely plausible in the table while
+      obeying different geometry, so a filter and a test enforce it.</li>
+    <li><strong>Non-relativistic.</strong> The space-charge treatment assumes
+      non-relativistic electrons, which bounds the beam voltages this applies
+      to.</li>
+    <li><strong>No uncertainty on any individual prediction.</strong> The band
+      shown on the Predict tab is the model's aggregate test error applied
+      uniformly. It is not a per-point confidence interval, and the true error on
+      any one gun may be larger.</li>
+  </ul>
+
+  <h3>What is solid</h3>
+  <ul class="tight">
+    <li>The dataset. Thirty rows extracted programmatically from the PDF, not
+      typed; the asterisked test cases independently reproduce the paper's own
+      23/7 split.</li>
+    <li>A transcription error we found in our own working sheet, and corrected.</li>
+    <li>The analytic Jacobian, verified to 1e-6 against finite differences.</li>
+    <li>The JS/Python parity of this page, verified to 1e-9.</li>
+    <li>The Langmuir–Blodgett solver, verified to 1e-9 against the classical
+      series.</li>
+    <li>The paper's own reported metrics recompute exactly from our extraction.</li>
+  </ul>
+
+  <h3>Source</h3>
+  <p class="note">
+    R. Panahi, S.A.H. Feghhi, Sh. Sanaye Hajari, M. Khorsandi,
+    "Determination of the Half-Beam cone angle for Pierce electron gun design
+    using an artificial neural network", <em>Results in Physics</em>
+    <strong>73</strong> (2025) 108256.
+    <a href="https://doi.org/10.1016/j.rinp.2025.108256" target="_blank" rel="noopener">
+      doi:10.1016/j.rinp.2025.108256</a>
+  </p>
+  <p class="note">The paper is open access under <strong>CC BY-NC</strong>. The 30
+    data rows are reproduced from its Table 2 under that licence, with attribution;
+    this work is non-commercial. The upstream measurements originate with Frost,
+    Purl &amp; Johnson (1962), Tiwary &amp; Basu (1987) and Yang, Jia &amp; Zhu
+    (2006), recorded per row in the dataset. Those three papers are paywalled and
+    were not independently retrieved, which is logged rather than glossed over —
+    and obtaining any one of them is the single item blocking the physics
+    engine.</p>
+
+  <p class="note muted" id="build-info"></p>
+</section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span id="footer-text"></span>
+  </div>
+</footer>
+
+<!--
+  Plain <script> tags, not type="module", and generated .js data files rather
+  than fetch(). Browsers block both module imports and fetch() on file:// URLs,
+  and this page has to work when index.html is opened straight off disk with no
+  server. See web/README.md.
+-->
+<script src="data/model_m1.js"></script>
+<script src="data/model_m1_multi.js"></script>
+<script src="data/dataset.js"></script>
+<script src="data/benchmark.js"></script>
+<script src="data/lb_alpha.js"></script>
+<script src="js/ann.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/gun.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
