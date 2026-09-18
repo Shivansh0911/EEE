@@ -1,0 +1,10 @@
+# Render service only. Deliberately minimal: the API exists for NSGA-II,
+# not for prediction (see B.1 - prediction runs client-side in the browser).
+# No pandas, no matplotlib, no pdfplumber: a smaller image is a faster cold start.
+
+fastapi==0.111.0
+uvicorn[standard]==0.49.0
+numpy==2.5.2
+scipy==1.17.1
+pymoo==0.6.2
+pydantic==2.7.4

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# Node / frontend
+node_modules/
+web/dist/
+.netlify/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Deliberately NOT ignored, because they are evidence, not build junk:
+#   models/*.json          trained weights are committed; the frontend loads them
+#   data/processed/*.csv   the dataset is the deliverable
+#   reports/figures/*.png  figures are cited in the report

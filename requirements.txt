@@ -1,0 +1,14 @@
+# Python toolchain for the offline half of the project:
+# physics engine, dataset build, ANN training, NSGA-II, figure export.
+# Versions are pinned to the interpreter the verified Tier A build and the
+# Langmuir-Blodgett solver were run under (CPython 3.12).
+
+numpy==2.5.2
+scipy==1.17.1
+pandas==2.3.3
+matplotlib==3.11.1
+pymoo==0.6.2
+pytest==8.3.2
+# pdfplumber is needed only to re-extract Table 2 from the PDF. Tier A is
+# already built and committed, so a normal checkout never has to run it.
+pdfplumber==0.11.10
