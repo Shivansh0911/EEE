@@ -31,7 +31,9 @@
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button role="tab" id="tab-predict" aria-controls="panel-predict" aria-selected="true">Predict</button>
       <button role="tab" id="tab-dataset" aria-controls="panel-dataset" aria-selected="false">Dataset</button>
+      <!-- Results tab hidden for now (too many graphs to explain) — uncomment to restore
       <button role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false">Results</button>
+      -->
       <button role="tab" id="tab-method"  aria-controls="panel-method"  aria-selected="false">Method</button>
       <button role="tab" id="tab-about"   aria-controls="panel-about"   aria-selected="false">About</button>
     </nav>
@@ -145,6 +147,7 @@
 </section>
 
 <!-- ============================ RESULTS ============================ -->
+<!-- Results section hidden for now — remove this comment wrapper to restore
 <section role="tabpanel" id="panel-results" aria-labelledby="tab-results" hidden>
   <h2>Results</h2>
   <p class="lede">We do not reproduce the paper's reported test accuracy. That is
@@ -220,6 +223,7 @@
       consistent negative bias is visible as a band well below zero.</figcaption>
   </figure>
 </section>
+-->
 
 <!-- ============================ METHOD ============================ -->
 <section role="tabpanel" id="panel-method" aria-labelledby="tab-method" hidden>

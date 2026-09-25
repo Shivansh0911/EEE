@@ -749,7 +749,7 @@
     });
 
     initDataset();
-    initResults();
+    // initResults();  // Results tab hidden for now — restore with the section in index.html
     initMethod();
     update();
 
