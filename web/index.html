@@ -30,6 +30,7 @@
 
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button role="tab" id="tab-predict" aria-controls="panel-predict" aria-selected="true">Predict</button>
+      <button role="tab" id="tab-design" aria-controls="panel-design" aria-selected="false">Design</button>
       <button role="tab" id="tab-dataset" aria-controls="panel-dataset" aria-selected="false">Dataset</button>
       <!-- Results tab hidden for now (too many graphs to explain) — uncomment to restore
       <button role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false">Results</button>
@@ -106,6 +107,69 @@
       </div>
     </div>
   </div>
+</section>
+
+<!-- ============================ DESIGN ============================= -->
+<section role="tabpanel" id="panel-design" aria-labelledby="tab-design" hidden>
+  <h2>Design</h2>
+  <p class="lede">Vedant's four inputs in, a complete Pierce gun out: angles, electrode
+    geometry, throw, and his EGUN point deck. The synthesis is a line-for-line port
+    of his exact Vaughan solver (verified against it, below) and runs in this page.</p>
+
+  <div class="stats" id="ds-stats" aria-label="How far to trust these numbers"></div>
+
+  <div class="grid predict" style="margin-top:20px">
+    <div class="card">
+      <div class="control"><div class="control-head">
+        <label for="ds-V">Beam voltage <span class="unit">V, kV</span></label>
+        <input type="number" id="ds-V" step="0.1" min="0.5"></div></div>
+      <div class="control"><div class="control-head">
+        <label for="ds-I">Beam current <span class="unit">I, A</span></label>
+        <input type="number" id="ds-I" step="0.01" min="0"></div></div>
+      <div class="control"><div class="control-head">
+        <label for="ds-rw">Beam waist radius <span class="unit">r_w, mm</span></label>
+        <input type="number" id="ds-rw" step="0.001" min="0"></div></div>
+      <div class="control"><div class="control-head">
+        <label for="ds-Jc">Cathode loading <span class="unit">J_c, A/cm²</span></label>
+        <input type="number" id="ds-Jc" step="0.1" min="0"></div></div>
+      <div class="btn-row" id="ds-presets"></div>
+    </div>
+
+    <div>
+      <div class="readout">
+        <div class="label">Half-angle as built θ_T (Vedant's solver, emulated)</div>
+        <div class="value"><span id="ds-theta">—</span></div>
+        <div class="band-note" id="ds-theta-raw"></div>
+        <div class="band-note" id="ds-measured"></div>
+      </div>
+      <div id="ds-messages"></div>
+      <figure class="figure">
+        <svg id="ds-svg" xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="Gun half cross-section"></svg>
+        <figcaption id="ds-caption"></figcaption>
+      </figure>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="ghost" type="button" id="ds-deck">Download EGUN deck</button>
+      </div>
+      <p class="band-note" id="ds-deck-note"></p>
+      <div class="card" style="margin-top:20px">
+        <h3 style="margin-top:0">Geometry</h3>
+        <div class="rows" id="ds-rows"></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Pareto front (NSGA-II, 50 000 evaluations)</h3>
+  <div class="btn-row">
+    <select id="ds-study" aria-label="Study"></select>
+    <button class="ghost" type="button" id="ds-load">Fetch from the API</button>
+  </div>
+  <div id="ds-pareto-msg" style="margin-top:12px"></div>
+  <figure class="figure">
+    <svg id="ds-pareto-svg" xmlns="http://www.w3.org/2000/svg" role="img"
+         aria-label="Pareto front"></svg>
+    <figcaption id="ds-pareto-note"></figcaption>
+  </figure>
 </section>
 
 <!-- ============================ DATASET ============================ -->
@@ -455,5 +519,10 @@
 <script src="js/physics.js"></script>
 <script src="js/gun.js"></script>
 <script src="js/app.js"></script>
+<script src="data/kf_table.js"></script>
+<script src="data/design_meta.js"></script>
+<script src="data/pareto.js"></script>
+<script src="js/closure.js"></script>
+<script src="js/design.js"></script>
 </body>
 </html>

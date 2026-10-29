@@ -219,3 +219,49 @@ dataset; the original sheet is preserved unmodified at
 area, dimensionless. It is not an angle. Renamed to `C` in this dataset. This
 matters directly for the "predict the convergence angle" task; see
 `reports/DECISIONS.md`.
+
+---
+
+## Vendored code and tier B2 (integration/vaughan-moo)
+
+### Vedant's Pierce-gun synthesis solver — vendored, unmodified
+
+`src/physics/vendor/pierce_gun_design_fixed.py` (1561 lines) is **Vedant's work**
+from the previous semester: an exact implementation of Vaughan J.R.M., "Synthesis
+of the Pierce gun", IEEE Trans. Electron Devices ED-28(1) (1981) 37–41, with the
+Yang, Jia & Zhu (2006) amendments, the Liao (2003) starting angle, the Greenwood
+et al. (2016) relativistic diode factor, and his own focus-electrode construction
+and EGUN point-deck writer. This repo imports it and never edits it
+(`src/physics/vaughan_adapter.py` wraps it). His own validations, as he reports
+them: Kant & Nagaraju 2021 CEERI klystron gun within 0.51 % (measured before he
+added the relativistic factor; with it, θ moves 0.81 % — see
+`tests/test_physics_layer.py`), Ardebili et al. 2025 nine guns at 0.26° mean.
+
+> **TODO — permission.** Vedant has not yet been asked for permission to vendor
+> his solver into this repository, or to publish his chat log (which is kept
+> locally, git-ignored, at `docs/context/vedant_chat_full.txt`). Ask before this
+> branch is pushed or the repo is made public.
+
+Derived artefact: `models/kf_table.json` is his `relativistic_factor()` evaluated
+on a 49 × 41 grid (`python -m src.physics.kf`).
+
+### Tier B2 — `data/processed/dataset_synthetic_v2.csv`
+
+| | |
+|---|---|
+| Rows | 1015 (1088 Latin-hypercube draws; 73 rejected for θ_raw > 56°, 0 infeasible) |
+| Label | θ_T from Vedant's **exact** solver at V_ref = 1 kV (k_f ≈ 1); `generator` column carries the solver file's SHA-1 |
+| Envelope | C 8–306.3 (log-uniform), P 0.30–3.67 µperv, r_w 0.51–4.42 mm, θ_raw ≤ 56°, −α < 7.9 |
+| Splits | `train` 851 / `val` 164. **Never `test`.** |
+| What it is | Classical-solver output. **Not** measured, **not** from a paper. |
+| Reproduce | `python -m src.data.synth_v2` (deterministic given `--seed`) |
+
+Tier B v1 (`dataset_tier_b.csv`) is kept unchanged; see D10 for why it is superseded.
+
+### Satwik's Colab notebook
+
+`notebooks/satwik_colab_reference.ipynb` (formerly `ANN_Testing.ipynb`), content
+untouched. Our network reproduces his forward pass with his trained weights
+(re-created by executing his cells on `data/raw/ann_testing_original.csv`) to
+1e-14: `tests/test_satwik_equivalence.py`. His sheet carries the case-11 typo
+noted above; the equivalence test uses his sheet as he did.

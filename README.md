@@ -15,6 +15,35 @@ It is a static page with no build step and no network calls.
 
 ---
 
+## Integration with Vedant's exact synthesis (branch `integration/vaughan-moo`)
+
+**Spec in → Pareto front of gun designs → each verified by Vedant's exact
+solver → EGUN deck out.**
+
+Vedant's solver (`src/physics/vendor/`, vendored unmodified, credit in
+`data/SOURCES.md`) is exact, trusted and slow (3–5 s per design). A float64
+emulator of it (`src/physics/closure.py`) matches it to ~1e-8 and is fast enough
+for NSGA-II to evaluate 50 000 designs per study. Every Pareto design that is
+reported is re-run through his exact solver (Gate G3), and any design can be
+turned into his EGUN point deck.
+
+```bash
+python -m src.physics.gate_g1            # G1: emulator vs his solver, 100 designs
+python -m src.data.synth_v2              # tier B2: 1015 rows labelled by his solver
+python -m src.ann.stage2                 # ANN-E, Stage-2 calibration, 7-gun evaluation
+python -m src.moo.run shin_eik ceeri_klystron   # NSGA-II, 50 000 evaluations each
+python -m src.moo.verify                 # G3: Pareto designs re-run exactly (exit 1 on failure)
+python -m src.moo.deck --study shin_eik  # his EGUN deck for the knee design
+python -m src.export.design_data         # data files for the Design tab
+uvicorn api.app:app                      # the optimisation API
+```
+
+Every headline number, with its source file and what it does **not** claim:
+**`reports/INTEGRATION_SUMMARY.md`**. Architecture and gates:
+`reports/INTEGRATION_DESIGN.md`. New decisions: D10–D12 in `reports/DECISIONS.md`.
+
+---
+
 ## What this is
 
 A Pierce gun is synthesised from three numbers a designer actually cares about:
