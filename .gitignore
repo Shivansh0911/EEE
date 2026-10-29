@@ -23,3 +23,7 @@ Thumbs.db
 #   models/*.json          trained weights are committed; the frontend loads them
 #   data/processed/*.csv   the dataset is the deliverable
 #   reports/figures/*.png  figures are cited in the report
+
+# Third-party chat log (Vedant's private Claude session): kept locally as
+# evidence, not published. See docs/context/README.md.
+docs/context/vedant_chat_full.txt
