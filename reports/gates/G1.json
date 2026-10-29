@@ -1,0 +1,53 @@
+{
+  "gate": "G1",
+  "passed": true,
+  "n_drawn": 100,
+  "seed": 7,
+  "n_feasible_both": 100,
+  "n_feasibility_disagree": 0,
+  "n_alpha_beyond_newton_limit": 0,
+  "criteria": {
+    "theta_mean_rel_max": 0.0005,
+    "length_mean_rel_max": 0.001,
+    "min_designs": 80
+  },
+  "worst_theta_mean_rel": 7.004431343783181e-09,
+  "worst_length_mean_rel": 7.64487958304997e-09,
+  "errors": {
+    "theta": {
+      "mean": 6.599281367088656e-09,
+      "max": 3.660015102550349e-08
+    },
+    "thetaT": {
+      "mean": 7.004431343783181e-09,
+      "max": 3.8752501977246435e-08
+    },
+    "Rc_mm": {
+      "mean": 5.66012898272909e-09,
+      "max": 3.070172661337733e-08
+    },
+    "Ra_mm": {
+      "mean": 2.744204400783961e-09,
+      "max": 2.522943666449557e-08
+    },
+    "zac_mm": {
+      "mean": 7.64487958304997e-09,
+      "max": 3.8558054225185626e-08
+    },
+    "za_mm": {
+      "mean": 4.873910476058107e-09,
+      "max": 3.036756476867903e-08
+    },
+    "zw_mm": {
+      "mean": 8.7182182680954e-10,
+      "max": 5.917692543892301e-09
+    },
+    "RcT_mm": {
+      "mean": 5.660129011165515e-09,
+      "max": 3.070172664665632e-08
+    }
+  },
+  "seconds_emulator": 0.2976231575012207,
+  "seconds_exact_parallel": 31.56898069381714,
+  "box": "P 0.2-3.7 uP, rw 0.1-10 mm, C 5-300 (log), V 1-300 kV (log)"
+}
