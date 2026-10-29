@@ -1,0 +1,112 @@
+{
+  "rule": "min distance to the ideal point, objectives normalised to [0,1] over the front",
+  "index_in_pareto_csv": 71,
+  "design": {
+    "V": 110704.05123476688,
+    "I": 120.0,
+    "rw_mm": 10.256792647033505,
+    "Jc": 3.062704525634331
+  },
+  "objectives": {
+    "Jc": 3.062704525634331,
+    "V": 110704.05123476688,
+    "rw_dev": 0.04661149459525553
+  },
+  "geometry_mm_deg": {
+    "muP": 3.2578866846444194,
+    "C": 11.855042667924854,
+    "theta": 40.04955820234383,
+    "thetaT": 45.315882863174416,
+    "rc_mm": 35.31531924334782,
+    "Rc_mm": 54.88432872407738,
+    "RcT_mm": 49.67031749529003,
+    "Ra_mm": 24.922197940954227,
+    "zac_mm": 29.96213078312315,
+    "za_mm": 39.04745552763925,
+    "ra_mm": 19.243424787912435,
+    "rb_za_mm": 16.036187323260364,
+    "zw_mm": 81.21943942135248,
+    "R": 1.563469973032787,
+    "rel_factor": 0.9845830711847903,
+    "E_kV_per_mm": 3.6947990126631263,
+    "za_valid": true
+  },
+  "sensitivity_pm5pct": {
+    "V-5%": {
+      "feasible": true,
+      "thetaT_rel_change_pct": 4.579355545577066,
+      "Rc_mm_rel_change_pct": -3.3963723126199405,
+      "zac_mm_rel_change_pct": -3.294415468011205,
+      "zw_mm_rel_change_pct": -3.7135201274872296,
+      "E_kV_per_mm_rel_change_pct": -1.7636877334882475
+    },
+    "V+5%": {
+      "feasible": true,
+      "thetaT_rel_change_pct": -4.103571607925791,
+      "Rc_mm_rel_change_pct": 3.3720699333419897,
+      "zac_mm_rel_change_pct": 3.276695027848589,
+      "zw_mm_rel_change_pct": 3.6705173359371015,
+      "E_kV_per_mm_rel_change_pct": 1.6686290858617596
+    },
+    "rw_mm-5%": {
+      "feasible": true,
+      "thetaT_rel_change_pct": 2.267753472313255,
+      "Rc_mm_rel_change_pct": -1.72738090038554,
+      "zac_mm_rel_change_pct": -0.7046354554454285,
+      "zw_mm_rel_change_pct": 0.08175259077350085,
+      "E_kV_per_mm_rel_change_pct": 0.7096358009031277
+    },
+    "rw_mm+5%": {
+      "feasible": true,
+      "thetaT_rel_change_pct": -2.190955961295235,
+      "Rc_mm_rel_change_pct": 1.7591896267151834,
+      "zac_mm_rel_change_pct": 0.7060944855505517,
+      "zw_mm_rel_change_pct": -0.2417457257022066,
+      "E_kV_per_mm_rel_change_pct": -0.7011437482086724
+    },
+    "Jc-5%": {
+      "feasible": true,
+      "thetaT_rel_change_pct": 1.1380875243320925,
+      "Rc_mm_rel_change_pct": 1.6966076078463697,
+      "zac_mm_rel_change_pct": 2.2316462347365356,
+      "zw_mm_rel_change_pct": 2.660951926544063,
+      "E_kV_per_mm_rel_change_pct": -2.1829309386375346
+    },
+    "Jc+5%": {
+      "feasible": true,
+      "thetaT_rel_change_pct": -1.0910165472151807,
+      "Rc_mm_rel_change_pct": -1.5662707964904394,
+      "zac_mm_rel_change_pct": -2.069931456585937,
+      "zw_mm_rel_change_pct": -2.5071037719477585,
+      "E_kV_per_mm_rel_change_pct": 2.1136832510928936
+    }
+  },
+  "expected_if_measured": {
+    "thetaT_solver_deg": 45.315882863174416,
+    "thetaT_expected_measured_deg": 47.39823136249594,
+    "band_pct": 13.844655177531509,
+    "range_deg": [
+      40.836109670109785,
+      53.9603530548821
+    ],
+    "extrapolated": false,
+    "outside_measured_range": [],
+    "calibration": "theta_meas ~ k * theta_T(solver), k = 1.0460, fitted on the 23 real training guns; band = 90th percentile of its leave-one-out |relative error| on those guns"
+  },
+  "reference_design": {
+    "design": {
+      "V": 150000,
+      "I": 120.0,
+      "rw_mm": 9.8,
+      "Jc": 5.0
+    },
+    "objectives": {
+      "Jc": 5.0,
+      "V": 150000.0,
+      "rw_dev": 0.0
+    },
+    "satisfies_constraints": true,
+    "thetaT": 32.159265636889074,
+    "throw_mm": 77.80673697670474
+  }
+}

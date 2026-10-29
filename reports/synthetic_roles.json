@@ -1,0 +1,152 @@
+{
+  "closure_calibrator_scalar": {
+    "type": "scalar",
+    "k": 1.0459518466319837
+  },
+  "band_scalar_pct_p90_loo": 13.844655177531509,
+  "calibration_envelope": {
+    "perveance_uperv": [
+      0.3,
+      3.67
+    ],
+    "rw_mm": [
+      0.51,
+      4.42
+    ],
+    "C": [
+      5.12,
+      306.3
+    ]
+  },
+  "posthoc_scale_free_calibration": {
+    "what": "ridge on (P, ln C) only, rw excluded as scale-free physics; POST-HOC, not used for any reported headline",
+    "lambda_by_loo23": 100.0,
+    "loo23_mre_pct": 8.345696444519296,
+    "test7_mre_pct": 7.815492826744452
+  },
+  "robustness": {
+    "bootstrap_90pct_interval_of_test_mre_pct": {
+      "M1_vs_measured": [
+        4.6916046505963935,
+        11.427469441116935
+      ],
+      "ANN-E+correction_vs_measured": [
+        3.0000447108534076,
+        7.973189469247363
+      ],
+      "calibrated_closure_vs_measured": [
+        1.3274446804899112,
+        5.019450921396714
+      ],
+      "exact_solver_raw_vs_measured": [
+        7.12516780928614,
+        13.37920377681796
+      ]
+    },
+    "calibrated_closure_loo_all_30_guns_mre_pct": 5.5112952567525,
+    "calibrated_closure_loo_23_train_guns_mre_pct": 6.842153797100779
+  },
+  "closure_calibrator": {
+    "type": "ridge",
+    "lambda": 1.0,
+    "mu": [
+      1.4873913043478257,
+      0.7361283258288366,
+      2.8686861965716726
+    ],
+    "sd": [
+      1.0055507571185938,
+      0.6376562560733128,
+      1.098038669194627
+    ],
+    "coef": [
+      0.07616628571799086,
+      -0.003022444181933408,
+      0.11587560704802767,
+      0.07726441041153127
+    ],
+    "features": [
+      "perveance_uperv",
+      "ln rw_mm",
+      "ln C"
+    ]
+  },
+  "stage1": {
+    "architecture_scores_vs_solver": {
+      "paper_3-3-2-1": {
+        "train_mre_vs_solver_pct": 0.32604398693477515,
+        "val_mre_vs_solver_pct": 0.3435046462626175,
+        "n_params": 23
+      },
+      "wide_3-8-8-1": {
+        "train_mre_vs_solver_pct": 0.0059700280557512045,
+        "val_mre_vs_solver_pct": 0.006825526162237394,
+        "n_params": 113
+      }
+    },
+    "anne_vs_solver_at_real_train_inputs_pct": 0.8019114564124561,
+    "anne_vs_solver_at_real_train_inputs_C_ge_8_pct": 0.26633180070414764,
+    "n_synthetic_train": 851,
+    "n_synthetic_val": 164
+  },
+  "stage2": {
+    "anne_candidates_loo": {
+      "scalar_k": {
+        "loo_mre_pct": 9.594819406274341,
+        "loo_abs_rel_err_p90_pct": 13.878622991888488
+      },
+      "ridge_lambda_1": {
+        "loo_mre_pct": 7.21473400692811,
+        "loo_abs_rel_err_p90_pct": 12.04828736663531
+      },
+      "ridge_lambda_10": {
+        "loo_mre_pct": 7.026891459196643,
+        "loo_abs_rel_err_p90_pct": 10.895402754520813
+      },
+      "ridge_lambda_100": {
+        "loo_mre_pct": 8.045168291889885,
+        "loo_abs_rel_err_p90_pct": 11.373624881380605
+      }
+    },
+    "closure_candidates_loo": {
+      "scalar_k": {
+        "loo_mre_pct": 9.15515735406291,
+        "loo_abs_rel_err_p90_pct": 13.844655177531509
+      },
+      "ridge_lambda_1": {
+        "loo_mre_pct": 6.842153797100779,
+        "loo_abs_rel_err_p90_pct": 13.446690107417105
+      },
+      "ridge_lambda_10": {
+        "loo_mre_pct": 6.983550499329116,
+        "loo_abs_rel_err_p90_pct": 11.377348938016999
+      },
+      "ridge_lambda_100": {
+        "loo_mre_pct": 7.909281387471569,
+        "loo_abs_rel_err_p90_pct": 11.298513356739969
+      }
+    },
+    "n_train_guns_anne": 16,
+    "n_train_guns_closure": 23
+  },
+  "choices": {
+    "anne_architecture": "wide_3-8-8-1",
+    "anne_correction": "ridge_lambda_10",
+    "closure_calibration": "ridge_lambda_1",
+    "k_closure": 1.0459518466319837,
+    "k_anne": 1.02904772089706
+  },
+  "measured_gun_band_pct_p90_loo": 13.446690107417105,
+  "test_7_guns_mre_pct": {
+    "M1_vs_measured": 7.926882552007833,
+    "ANN-E_vs_solver": 0.0778334588947576,
+    "ANN-E+correction_vs_measured": 5.39837637653071,
+    "calibrated_closure_vs_measured": 2.882067038523264,
+    "exact_solver_raw_vs_measured": 10.372517349107937,
+    "paper_iterative_column_vs_measured": 10.137243808986353
+  },
+  "best_vs_measured": "calibrated_closure_vs_measured",
+  "beats_M1": true,
+  "headline_model": "calibrated_closure_vs_measured",
+  "note": "7 test guns; differences of a fraction of a percent are within noise"
+}

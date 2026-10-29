@@ -359,3 +359,71 @@ anyone could hand this project.
    **done, D9.** 1000 rows generated over C ≥ 8. The low-convergence corner
    (C < 8) remains without synthetic support, and case 26 sits just outside the
    envelope's P floor.
+
+---
+
+## D10 — Tier B v1 used the full-sphere Langmuir–Blodgett constant
+
+**Finding.** `src/data/synth_generator.py` labelled Tier B v1 through
+`src/physics/probe_closure.solve_case`, which writes Region I as
+`P = 29.33 (1 − cos θ) / α²`. 29.33 µperv is the Langmuir–Blodgett constant for
+*full* concentric spheres, `(16π/9) ε₀ √(2e/m)`. A Pierce gun uses the cone of
+half-angle θ, which subtends `(1 − cos θ)/2` of the sphere, so the cone constant is
+**14.665** (`src/physics/lb.py` derives both from CODATA; Vaughan 1981 Eq. 3
+prints 14.67). The swept lens coefficient `c = 0.62` (Vaughan: 0.417) partly
+absorbed the factor of two, which is why v1 still looked plausible.
+
+**Measured consequence.** Against Vedant's exact solver at the same inputs, the v1
+labels sit at **3.22 % MRE** (1000 rows). That is not the main reason M3 lost:
+the exact solver is itself **10.49 %** from the 30 measured guns (the paper's own
+iterative column: 10.15 %). The constant was wrong; the bigger problem was
+always that the classical method is ~10 % from reality.
+
+**Action.** v1 is kept, unedited and fully labelled. It is not used by anything
+new. The old Predict-tab drawing (`web/js/physics.js`) still uses 29.33 for its
+anode sketch — flagged, not changed in this branch.
+
+## D11 — Synthetic data has a role, and the role is not "more training rows"
+
+**Decision.** Synthetic rows may only teach what real rows cannot, and are
+never test data. Concretely (`src/data/synth_v2.py`, `src/ann/stage2.py`):
+
+1. **Stage 1 — shape of the classical map.** 1015 Latin-hypercube designs inside
+   the validated envelope (C ≥ 8, θ_raw ≤ 56°, Table 2's P and r_w ranges, Eq. 5
+   inversion converged), each labelled by **Vedant's exact solver** (not an
+   emulator, not our probe). Tier `B2_synthetic`; splits `train`/`val` only.
+   ANN-E is trained on them and judged **against the solver**, never against
+   measurement: 0.08 % MRE at the 7 test guns' inputs.
+2. **Stage 2 — the gap to reality.** Fitted on real training guns only.
+   Candidates (scalar k; ridge on (P, ln r_w, ln C) at λ = 1, 10, 100) chosen by
+   leave-one-out MRE on those guns.
+3. **Evaluation.** The 7 held-out guns, once, after every choice was frozen.
+
+**What the evaluation showed, and what it did not.** The LOO-selected calibrated
+closure scored 2.88 % on the 7 test guns. That is not the headline, for two
+reasons found by checking it rather than celebrating it (standing rule 10):
+- its LOO MRE over all 30 guns is **5.51 %**, and the 7-gun bootstrap 90 %
+  interval is 1.3–5.0 %: 2.88 % is a favourable small sample;
+- its whole advantage comes from **ln r_w**. θ depends on (P, C) only — r_w is a
+  length scale — and a post-hoc (P, ln C)-only ridge (reported, not selected)
+  scores 8.35 % LOO and 7.82 % on test: no better than M1. A scale-dependent
+  correction is fitting something incidental in the 30-gun dataset, and it
+  extrapolates by −22 % / +33 % at the two studies' knee designs.
+
+So **M1 (7.93 %) stays the headline** for θ against measured guns, and the design
+tool uses the scale-free **scalar k = 1.046** with a band of **±13.8 %** (90th
+percentile of its LOO error) for "what would a measured gun show". The brief
+anticipated ±8 %; the computed figure is wider and is the one reported.
+
+## D12 — The optimiser only returns designs Vedant's deck code can build
+
+**Finding.** On the first CEERI run (objectives Jc, V, |r_w − 9.8|), **0 of 100**
+Pareto designs could be turned into an EGUN deck: minimising V drives P and θ_T
+up until his 67.5° focus-electrode construction refuses ("electrode tip too far
+downstream for pt 9"). A front a designer cannot simulate is not a deliverable.
+
+**Decision.** `deck_constructible` is a constraint (on by default in every
+study): his `get_design_params_mode1` is run, with his defaults, on each
+candidate. Only his drift-tube clearance integral — which feeds a printout,
+never a refusal — is stubbed during that check; `write_deck` always runs his
+full code.

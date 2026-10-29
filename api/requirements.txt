@@ -8,3 +8,5 @@ numpy==2.5.2
 scipy==1.17.1
 pymoo==0.6.2
 pydantic==2.7.4
+# Vedant's solver: the deck-constructible constraint runs his code.
+mpmath==1.3.0

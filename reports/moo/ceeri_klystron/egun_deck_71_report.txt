@@ -1,0 +1,61 @@
+PIERCE ELECTRON GUN — SYNTHESIS RESULTS
+==============================================================================
+
+INPUTS
+------------------------------------------------------------------------------
+  Beam voltage  V                         110.70405000000001  kV
+  Beam current  I                                120.0  A
+  Beam waist radius  rw                      10.256793  mm
+  Cathode emission density  Jc               3.0627045  A/cm2
+
+SYNTHESIS RESULTS
+------------------------------------------------------------------------------
+  Microperveance  uP                           3.25789  
+  Relativistic diode current factor  kf        0.98458  
+  Cathode disc radius  rc                     35.31532  mm
+  Convergence half angle  theta               40.04956  deg
+  Cathode spherical radius  Rc                54.88433  mm
+  Anode sphere radius  Ra                     24.92220  mm
+  Cathode-anode spacing  zac                  29.96213  mm
+  Anode plane position  za                    39.04746  mm
+  Beam radius at anode  rb(za)                16.03619  mm
+  Anode aperture radius  ra                   19.24343  mm
+  Normalised compression  R                    1.56347  
+  Area compression  (rc/rw)^2                 11.85504  
+  Throw, cathode vertex to waist  zw          81.21944  mm
+
+SPHERICAL-ABERRATION CORRECTION  (factor k = 0.905)
+------------------------------------------------------------------------------
+  Corrected half angle  thetaT                45.31588  deg
+  Corrected cathode sphere radius  RcT        49.67032  mm
+
+SOLVER DIAGNOSTICS
+------------------------------------------------------------------------------
+  Status                                  CONVERGED (bracketed bisection)
+  Roots found in the valid window                    1
+  Search window                           0 - 89.00 deg
+  Cross-check, Yang (2006) iteration            40.054  deg
+  Agreement between the two solvers             0.0041  deg
+  Anode aperture equation valid                    yes
+  Warnings: none
+
+ELECTRODE GEOMETRY SETTINGS USED
+------------------------------------------------------------------------------
+  Focus electrode angle to beam edge        67.50  deg   (Pierce value, fixed)
+  Cathode built with  thetaT, RcT           45.316 deg, 49.6703 mm  (Vaughan Sec. III-F)
+  Anode side shifted downstream by          1.8712 mm  (extra depth of corrected cathode)
+  Cathode rim to electrode gap  k1          0.020 x RcT = 0.9934 mm
+  Anode sphere rim angle  beta              89.82  deg   (set by pt 9 lying below pt 8)
+  Focus electrode tip height                1.5 x H2  = 52.9730 mm  (H2 = height of pt 2)
+  Gap between pts 7 and 8                   0.0350 mm  (defaults to the cathode-anode spacing)
+  Electrode length                          44.134  mm
+  Grid spacing  H_z, H_r                    0.05, 0.05 mm
+  Cathode vertex offset  d                  0.20 mm;  cathode body depth  l  0.00 mm
+  Anode aperture factor  ra / rb(za)        1.200
+  Gap, pts 11 to 10 (pt 10 above pt 11)     57 x H_r  = 2.8500 mm
+  Drift-tube taper, pts 11 to 12            11.863  deg   (beam exit angle phi2)
+  Drift-tube radius, pts 12 and 13          15.9167 mm
+  Smallest drift-tube / beam radius         1.200
+  Rmax = 1.75 x H2                          61.8018 mm
+  Zmax = d + 1.3 x throw                    105.7853 mm
+

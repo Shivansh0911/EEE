@@ -12,3 +12,9 @@ pytest==8.3.2
 # pdfplumber is needed only to re-extract Table 2 from the PDF. Tier A is
 # already built and committed, so a normal checkout never has to run it.
 pdfplumber==0.11.10
+# Vedant's vendored solver (src/physics/vendor) computes in 30-digit mpmath.
+mpmath==1.3.0
+# The optimisation API and its tests (tests/test_api.py).
+fastapi==0.111.0
+uvicorn[standard]==0.49.0
+httpx==0.27.0

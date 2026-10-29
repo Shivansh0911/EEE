@@ -1,0 +1,60 @@
+{
+  "study": {
+    "name": "shin_eik",
+    "title": "Shin et al. 35 GHz EIK gun (14 kV, 0.5 A, rw 0.2255 mm, 5 A/cm2)",
+    "reference_design": {
+      "V": 14000,
+      "I": 0.5,
+      "rw_mm": 0.2255,
+      "Jc": 5.0
+    },
+    "I": 0.5,
+    "bounds": {
+      "V": [
+        8000,
+        25000
+      ],
+      "rw_mm": [
+        0.15,
+        0.35
+      ],
+      "Jc": [
+        1.0,
+        12.0
+      ]
+    },
+    "objectives": [
+      "Jc",
+      "thetaT",
+      "rw_dev"
+    ],
+    "targets": {
+      "rw_mm": 0.2255
+    },
+    "constraints": {
+      "C": [
+        8,
+        300
+      ],
+      "P": [
+        0.3,
+        3.67
+      ],
+      "thetaT_max": 66.5,
+      "E_max_kV_per_mm": 6.0,
+      "aperture_valid": true,
+      "deck_constructible": true,
+      "throw_mm": null,
+      "throw_tol": 0.1,
+      "ann_envelope": false
+    },
+    "pop_size": 100,
+    "n_gen": 500,
+    "seed": 1
+  },
+  "evaluations": 50000,
+  "pareto_size": 100,
+  "wall_seconds": 163.91977381706238,
+  "backend": "lb-closure",
+  "seed": 1
+}

@@ -465,3 +465,19 @@ footer.site {
   .wrap { padding: 0 14px; }
   th, td { padding: 7px 9px; }
 }
+
+/* ---------- design tab ---------- */
+#ds-svg, #ds-pareto-svg { width: 100%; height: auto; display: block; }
+.ds-axis { stroke: var(--line); stroke-width: 1; stroke-dasharray: 4 3; }
+.ds-beam { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 3; }
+.ds-cathode { fill: none; stroke: var(--warn); stroke-width: 2.5; }
+.ds-electrode, .ds-anode { fill: none; stroke: var(--ink-2); stroke-width: 1.8; }
+.ds-label { fill: var(--ink-3); font-size: 11px; font-family: var(--sans); }
+.ds-pt { fill: var(--accent); opacity: 0.75; cursor: pointer; }
+.ds-pt:hover, .ds-pt:focus { opacity: 1; outline: none; stroke: var(--ink); }
+.ds-knee { fill: var(--bad); cursor: pointer; }
+#ds-study { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 6px; font: inherit; font-size: 0.8rem; padding: 4px 8px; max-width: 100%; }
+#ds-stats .stat .n { font-size: 1.25rem; }
+button.ghost:disabled { opacity: 0.45; cursor: not-allowed; }
+#ds-deck-note { font-size: 0.78rem; color: var(--ink-3); max-width: 72ch; }
