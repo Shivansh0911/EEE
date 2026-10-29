@@ -61,6 +61,8 @@ def synthesize(V, I, rw_mm, Jc, aperture_factor=1.2):
     mean the adapter is misusing his code.
     """
     m = module()
+    # mpmath refuses NumPy scalars (e.g. an int64 read back from a CSV).
+    V, I, rw_mm, Jc = float(V), float(I), float(rw_mm), float(Jc)
     try:
         with contextlib.redirect_stdout(io.StringIO()):
             r = m.pierce_synthesis(V, I, rw_mm / IN_TO_MM, Jc,
@@ -152,16 +154,60 @@ def write_deck(result, path, overrides=None, report_path=None):
     r["rw_mm"] = result["rw_mm"]
     buf = io.StringIO()
     with _patched_ask(overrides or {}), contextlib.redirect_stdout(buf):
-        dp = m.get_design_params_mode1(r)
+        try:
+            dp = m.get_design_params_mode1(r)
+        except ValueError as e:
+            raise DeckRefused(f"his electrode construction refuses this design: {e}") from e
         pts, meta = m.compute_gun_points_mm(r, dp)
+        # Exactly as his main() calls it (RcT*CM*10, not RcT*25.4: they differ
+        # in the last bit for about half of all values).
         m.print_gun_points(pts, meta, V=r["V"], H_z=dp["H_z"], H_r=dp["H_r"],
-                           Rc_mm_val=r["RcT"] * IN_TO_MM, rc_mm_val=r["rc"] * IN_TO_MM,
+                           Rc_mm_val=r["RcT"] * m.CM * 10, rc_mm_val=r["rc"] * m.CM * 10,
                            d_val=dp["d"], txt_path=path)
         if report_path:
             m.write_synthesis_report(r, dp, meta, path=report_path)
     if not os.path.exists(path):
         raise RuntimeError(f"his deck writer did not produce {path}:\n{buf.getvalue()}")
     return pts, meta, dp
+
+
+def deck_constructible(res, idx=None):
+    """
+    Would his electrode construction (get_design_params_mode1, defaults) accept
+    each design? `res` is an LBClosure result dict (lengths in mm). Runs his own
+    code on the emulated values; ~1 ms per design. Returns a boolean array.
+    """
+    import numpy as np
+    m = module()
+    n = len(res["feasible"])
+    ok = np.zeros(n, dtype=bool)
+    keys = {"Rc": "Rc_mm", "Ra": "Ra_mm", "rc": "rc_mm", "ra": "ra_mm", "za": "za_mm",
+            "zw": "zw_mm", "rb_za": "rb_za_mm", "RcT": "RcT_mm"}
+    # His beam_edge_table (48 000 exp() calls) feeds only the printed drift-tube
+    # clearance, never a refusal, so it is stubbed for this check alone. Deck
+    # writing (write_deck) always runs his full code.
+    edge = m.beam_edge_table
+    m.beam_edge_table = lambda rw, *a, **k: [(0.0, rw)]
+    try:
+        return _constructible(m, res, keys, n, ok, idx)
+    finally:
+        m.beam_edge_table = edge
+
+
+def _constructible(m, res, keys, n, ok, idx):
+    with _patched_ask({}), contextlib.redirect_stdout(io.StringIO()):
+        for i in (range(n) if idx is None else idx):
+            if not (res["feasible"][i] and res["za_valid"][i]):
+                continue
+            r = {k: res[v][i] / IN_TO_MM for k, v in keys.items()}
+            r.update(theta=res["theta"][i], thetaT=res["thetaT"][i], muP=res["muP"][i],
+                     R=res["R"][i], rw=res["rw_mm"][i] / IN_TO_MM)
+            try:
+                m.get_design_params_mode1(r)
+                ok[i] = True
+            except (ValueError, ZeroDivisionError):
+                pass
+    return ok
 
 
 def relative_error(a, b):

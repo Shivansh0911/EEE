@@ -1,0 +1,57 @@
+{
+  "name": "template",
+  "title": "Template: copy, rename, and edit. Units: V volts, I amps, rw mm, Jc A/cm2, lengths mm.",
+  "reference_design": null,
+  "I": 1.0,
+  "bounds": {
+    "V": [
+      10000,
+      40000
+    ],
+    "rw_mm": [
+      0.3,
+      1.5
+    ],
+    "Jc": [
+      1.0,
+      10.0
+    ]
+  },
+  "objectives": [
+    "Jc",
+    "thetaT"
+  ],
+  "objectives_available": [
+    "Jc",
+    "thetaT",
+    "V",
+    "zac",
+    "throw",
+    "rw_dev",
+    "theta_dev"
+  ],
+  "targets": {
+    "rw_mm": null,
+    "thetaT": null
+  },
+  "constraints": {
+    "C": [
+      8,
+      300
+    ],
+    "P": [
+      0.3,
+      3.67
+    ],
+    "thetaT_max": 66.5,
+    "E_max_kV_per_mm": 6.0,
+    "aperture_valid": true,
+    "deck_constructible": true,
+    "throw_mm": null,
+    "throw_tol": 0.1,
+    "ann_envelope": false
+  },
+  "pop_size": 100,
+  "n_gen": 500,
+  "seed": 1
+}

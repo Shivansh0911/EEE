@@ -241,7 +241,37 @@ def run(verbose=True, retrain=True):
         loo30[i] = apply_calibration(p, sall[i:i + 1], Xall[i:i + 1])[0]
     calibrator = fit_params(clo_name, s_tr, mtr, Xtr)
 
+    # POST-HOC sensitivity (decided after the test numbers above were seen, so it
+    # is reported, never selected): theta depends on (P, C) only -- rw is a
+    # length scale -- so a residual model on (P, ln C) is the dimensionally
+    # consistent one. Same candidates, same LOO selection on training guns.
+    def ridge2(f, m, X, lam):
+        F = np.column_stack([X[:, 0], np.log(X[:, 2])])
+        mu, sd = F.mean(0), F.std(0)
+        A = np.column_stack([np.ones(len(F)), (F - mu) / sd])
+        coef = np.linalg.solve(A.T @ A + lam * np.diag([0.0, 1.0, 1.0]), A.T @ (m / f - 1))
+        return lambda f2, X2: f2 * (1 + np.column_stack(
+            [np.ones(len(X2)), (np.column_stack([X2[:, 0], np.log(X2[:, 2])]) - mu) / sd]) @ coef)
+
+    def loo_mre(f, m, X, lam):
+        pred = np.empty_like(m)
+        for i in range(len(m)):
+            k = np.arange(len(m)) != i
+            pred[i] = ridge2(f[k], m[k], X[k], lam)(f[i:i + 1], X[i:i + 1])[0]
+        return mre(m, pred)
+    ph = {lam: loo_mre(s_tr, mtr, Xtr, lam) for lam in RIDGE_LAMBDAS}
+    lam_ph = min(ph, key=ph.get)
+    posthoc = {"what": "ridge on (P, ln C) only, rw excluded as scale-free physics; "
+                       "POST-HOC, not used for any reported headline",
+               "lambda_by_loo23": lam_ph, "loo23_mre_pct": ph[lam_ph],
+               "test7_mre_pct": mre(mte, ridge2(s_tr, mtr, Xtr, lam_ph)(s_te, Xte))}
+
     out = {
+        "closure_calibrator_scalar": {"type": "scalar", "k": choices["k_closure"]},
+        "band_scalar_pct_p90_loo": clo_scores["scalar_k"]["loo_abs_rel_err_p90_pct"],
+        "calibration_envelope": {c: [float(train[c].min()), float(train[c].max())]
+                                 for c in cols},
+        "posthoc_scale_free_calibration": posthoc,
         "robustness": {
             "bootstrap_90pct_interval_of_test_mre_pct": boot,
             "calibrated_closure_loo_all_30_guns_mre_pct": mre(mall, loo30),

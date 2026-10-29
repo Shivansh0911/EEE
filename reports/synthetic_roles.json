@@ -1,4 +1,29 @@
 {
+  "closure_calibrator_scalar": {
+    "type": "scalar",
+    "k": 1.0459518466319837
+  },
+  "band_scalar_pct_p90_loo": 13.844655177531509,
+  "calibration_envelope": {
+    "perveance_uperv": [
+      0.3,
+      3.67
+    ],
+    "rw_mm": [
+      0.51,
+      4.42
+    ],
+    "C": [
+      5.12,
+      306.3
+    ]
+  },
+  "posthoc_scale_free_calibration": {
+    "what": "ridge on (P, ln C) only, rw excluded as scale-free physics; POST-HOC, not used for any reported headline",
+    "lambda_by_loo23": 100.0,
+    "loo23_mre_pct": 8.345696444519296,
+    "test7_mre_pct": 7.815492826744452
+  },
   "robustness": {
     "bootstrap_90pct_interval_of_test_mre_pct": {
       "M1_vs_measured": [
