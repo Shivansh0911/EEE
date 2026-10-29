@@ -237,10 +237,9 @@ them: Kant & Nagaraju 2021 CEERI klystron gun within 0.51 % (measured before he
 added the relativistic factor; with it, θ moves 0.81 % — see
 `tests/test_physics_layer.py`), Ardebili et al. 2025 nine guns at 0.26° mean.
 
-> **TODO — permission.** Vedant has not yet been asked for permission to vendor
-> his solver into this repository, or to publish his chat log (which is kept
-> locally, git-ignored, at `docs/context/vedant_chat_full.txt`). Ask before this
-> branch is pushed or the repo is made public.
+> **Permission.** Vedant gave his solver to this project for inclusion in this
+> repository (confirmed by Shivansh, 2026-10-29). His chat log was not part of
+> that and stays local and git-ignored at `docs/context/vedant_chat_full.txt`.
 
 Derived artefact: `models/kf_table.json` is his `relativistic_factor()` evaluated
 on a 49 × 41 grid (`python -m src.physics.kf`).

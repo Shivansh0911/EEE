@@ -98,4 +98,4 @@ deck.
   θ_raw > 56.44° get no deck and are kept off the fronts.
 - **The "already built integration" (94 tests) was never seen.** The file of
   that name was a text note; this branch was built from scratch.
-- **Vedant has not yet given permission** for his solver to be vendored.
+- Vedant gave his solver for inclusion here (2026-10-29); his chat log is not published.
