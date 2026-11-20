@@ -234,29 +234,33 @@
     }
     $("messages").innerHTML = out.join("");
 
-    /* ---- geometry + drawing ---- */
-    var geo = physics.geometry({
-      thetaDeg: theta, P: state.P, rw: state.rw, C: state.C, lbTable: LB,
-    });
-    gun.render($("gun-svg"), geo);
+    /* ---- beam-focusing electrode: Tiwary & Basu (1988) only ---- */
+    var tb = null;
+    try {
+      tb = window.EGUN.pierce.tbFromInputs(state.P, state.rw, state.C, theta);
+    } catch (e) { tb = null; }
+    window.EGUN.tbgun.render($("gun-svg"), tb, theta);
     $("gun-caption").innerHTML =
-      "Meridional slice, drawn to scale, mirrored about the axis. " +
-      "The cathode cap and r_c, R_c follow exactly from θ by eqs (2) and (4). " +
-      "The anode is placed by the Langmuir–Blodgett relation, which is the part " +
-      "of our physics engine that passed its check (~1e-9). " +
-      "<strong>The anode-to-waist drift length is indicative only</strong> — it " +
-      "uses the same space-charge closure that failed validation at MAE 1.66°. " +
-      "A schematic, not a drawing to build from.";
+      "Beam-focusing electrode and anode face from <strong>Tiwary &amp; Basu (1988)</strong>: " +
+      "the V = 0 and V = V<sub>a</sub> equipotentials of the ideal convergent flow, for the " +
+      "angle θ predicted above. Cathode r<sub>c</sub> = √C·r<sub>w</sub>, R<sub>c</sub> = " +
+      "r<sub>c</sub>/sin θ; anode sphere R<sub>a</sub> from the Langmuir–Blodgett cone relation " +
+      "P = 14.665 (1 − cos θ)/α². Each electrode is drawn up to its highest point. Upper half of " +
+      "the axisymmetric gun, to scale.";
 
-    var rows = [
-      ["Cathode disc radius r_c", fmt(geo.rc, 3) + " mm", "√C · r_w, eq (2)"],
-      ["Cathode radius of curvature R_c", fmt(geo.Rc, 3) + " mm", "r_c / sin θ, eq (4)"],
-      ["γ = ln(R_c/R_a)", fmt(geo.gamma, 4), "from Langmuir–Blodgett"],
-      ["Anode aperture radius r_a", fmt(geo.ra, 3) + " mm", "R_a sin θ"],
-      ["Cathode→anode along axis", fmt(geo.zAnode, 3) + " mm", "R_c − R_a"],
-      ["Anode→waist drift", fmt(geo.drift ? geo.drift.length : NaN, 3) + " mm",
-       "indicative — failed gate"],
-    ];
+    var rows = tb ? [
+      ["Half-beam cone angle θ", fmt(theta, 2) + "°", "from the network above"],
+      ["Cathode disc radius r_c", fmt(tb.rc, 3) + " mm", "√C · r_w"],
+      ["Cathode sphere radius R_c", fmt(tb.Rc, 3) + " mm", "r_c / sin θ"],
+      ["Anode sphere radius R_a", fmt(tb.Ra, 3) + " mm", "Langmuir–Blodgett, 14.665"],
+      ["Cathode→anode along the axis", fmt(tb.anodeOnAxisZ, 3) + " mm", "R_c − R_a"],
+      ["Focus electrode angle to the beam edge", fmt(tb.angleToEdge, 1) + "°", "Tiwary & Basu, at the cathode rim"],
+      ["Focus electrode angle to the axis", fmt(tb.angleToAxis, 1) + "°", "67.5° − θ"],
+      ["Focus electrode tip (z, r)", fmt(tb.bfeTip[0], 2) + ", " + fmt(tb.bfeTip[1], 2) + " mm",
+       "highest point of V = 0"],
+      ["Anode face top (z, r)", fmt(tb.anodeTop[0], 2) + ", " + fmt(tb.anodeTop[1], 2) + " mm",
+       "highest point of V = Va"],
+    ] : [["Tiwary & Basu", "—", "no electrode for these inputs"]];
     $("geom-rows").innerHTML = rows.map(function (r) {
       return '<div class="row"><span class="k">' + esc(r[0]) +
              ' <small class="muted">' + esc(r[2]) + '</small></span>' +

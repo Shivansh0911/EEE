@@ -191,3 +191,36 @@ def laplace_residual(Rc, Ra, theta0_deg, n=48, span_deg=40.0):
     harmonic_2d = np.abs(Vuu + Vtt) / (np.abs(Vuu) + np.abs(Vtt))
     return {"max": float(rel.max()), "rms": float(np.sqrt((rel ** 2).mean())),
             "check_2d_harmonic_max": float(harmonic_2d.max())}
+
+
+def from_inputs(P_uperv, rw_mm, C, theta0_deg, n=4000):
+    """
+    Tiwary & Basu's electrodes straight from the ANN's inputs and angle.
+
+    Their synthesis starts from the cathode radius, the ratio rc/ra and the
+    half-beam cone angle theta0 (their Sec. IV, from their ref. [1]). From the
+    Predict tab's inputs these are: r_c = sqrt(C) r_w (disc radius),
+    Rc = r_c / sin(theta0) (cathode sphere), and Ra from the Langmuir-Blodgett
+    cone relation P = 14.665 (1 - cos theta0) / alpha^2 (the cone constant,
+    src/physics/lb.py), alpha -> y = ln(Rc/Ra) by Vaughan's series. Then the
+    focus electrode (V = 0) and anode face (V = Va) as above, each cut at its
+    highest point. Cathode vertex at z = 0.
+
+    Returns dict with rc, Rc, Ra, y, the two curves (z, r) in mm, and the
+    electrode's angle to the beam edge (67.5 deg, the paper's result) and to the
+    axis (67.5 - theta0) where it leaves the cathode rim.
+    """
+    th = math.radians(theta0_deg)
+    rc = math.sqrt(C) * rw_mm
+    Rc = rc / math.sin(th)
+    a = math.sqrt(lb.CONE_CONST * (1 - math.cos(th)) / P_uperv)
+    y = float(lb.y_from_a(a))
+    Ra = Rc * math.exp(-y)
+    up = lambda P: P[: int(np.argmax(P[:, 1])) + 1]
+    B = up(to_gun(bfe_s(n=n), Rc, th))
+    A = up(to_gun(anode_s(y, n=n), Rc, th))
+    return {"rc": rc, "Rc": Rc, "Ra": Ra, "y": y, "alpha": a, "bfe": B, "anode": A,
+            "angle_to_edge_deg": math.degrees(PIERCE),
+            "angle_to_axis_deg": math.degrees(PIERCE) - theta0_deg,
+            "bfe_tip": tuple(B[-1]), "anode_top": tuple(A[-1]),
+            "anode_on_axis_z": Rc - Ra}

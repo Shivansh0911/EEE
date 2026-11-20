@@ -68,16 +68,18 @@
     }
     return out;
   }
-  function bfeS() {
+  function bfeS(n) {
+    n = n || 400;
     var ts = [];
-    for (var i = 1; i <= 400; i++) ts.push(i * (6.0 / 400));
+    for (var i = 1; i <= n; i++) ts.push(i * (6.0 / n));
     var e = C(Math.cos(PIERCE), -Math.sin(PIERCE));
     var s = trace(function (t) { return C(t * e.re, t * e.im); }, ts, C(ts[0] * e.re, ts[0] * e.im));
     return [C(0, 0)].concat(s);
   }
-  function anodeS(y) {
+  function anodeS(y, n) {
+    n = n || 400;
     var K = cpow(alpha(C(y)), 4.0 / 3.0), taus = [];
-    for (var i = 0; i <= 400; i++) taus.push(-(i * (40.0 / 400)));
+    for (var i = 0; i <= n; i++) taus.push(-(i * (40.0 / n)));
     return trace(function (tau) { return cpow(C(K.re, K.im + tau), 0.75); }, taus, C(y));
   }
   function toGun(s, Rc, th0, d) {
@@ -214,7 +216,21 @@
     }
   }
 
-  var api = { tiwaryBasuCurves: tiwaryBasuCurves, tiwaryBasuRows: tiwaryBasuRows,
+  /* bfe.from_inputs: Tiwary & Basu's electrodes from the Predict tab's inputs
+     (P, rw, C) and its angle theta0. Rc/Ra from the Langmuir-Blodgett cone
+     relation P = 14.665 (1 - cos theta0) / alpha^2. Cathode vertex at z = 0. */
+  var CONE = 14.664652527448363;          // lb.CONE_CONST: (16 pi/9) eps0 sqrt(2 e/m) x 1e6 / 2
+  function tbFromInputs(P, rw, Cc, theta0, n) {
+    n = n || 4000;
+    var th = theta0 * DEG2RAD, rc = Math.sqrt(Cc) * rw, Rc = rc / Math.sin(th);
+    var a = Math.sqrt(CONE * (1 - Math.cos(th)) / P), y = CL.yFromA(a), Ra = Rc * Math.exp(-y);
+    var B = upToApex(toGun(bfeS(n), Rc, th, 0)), An = upToApex(toGun(anodeS(y, n), Rc, th, 0));
+    return { rc: rc, Rc: Rc, Ra: Ra, y: y, alpha: a, bfe: B, anode: An,
+             angleToEdge: PIERCE / DEG2RAD, angleToAxis: PIERCE / DEG2RAD - theta0,
+             bfeTip: B[B.length - 1], anodeTop: An[An.length - 1], anodeOnAxisZ: Rc - Ra };
+  }
+
+  var api = { tiwaryBasuCurves: tiwaryBasuCurves, tbFromInputs: tbFromInputs, tiwaryBasuRows: tiwaryBasuRows,
               vedantRows: vedantRows, deckText: deckText, chooseGrid: chooseGrid,
               pierceDeck: pierceDeck, bfeS: bfeS, anodeS: anodeS };
   root.EGUN = root.EGUN || {};
