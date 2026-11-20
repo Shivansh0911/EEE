@@ -282,37 +282,55 @@ def video3():
             "did not run: it misses the closing slash of the cathode block, and its solver settings "
             "crash PIERCE. Our deck writer fixes both.")
     s.terminal(rec("v3_experiments"),
-               "One command builds all seven decks from Vedant's code and ours, and runs them in "
-               "target dot exe in parallel. The design asks for one hundred twenty amps. Sir's deck "
-               "gives plus one point five percent. Vedant's deck, plus twenty six and a half. With "
-               "the uncorrected cathode, plus forty. The paper one electrodes, minus fourteen and a "
-               "half. And the electrode angle moves the current from plus one to plus thirty eight "
-               "percent.", title="python -m src.sim.experiments")
-    for name, title, txt, dur in [
-        ("reference", "Sir's reference deck",
-         f"Sir's own deck first, as a check: {cur('reference'):.1f} amps, reproducing his run "
-         "exactly. First the electrodes, then the field lines, then the electrons converging to "
-         "the waist.", 9),
-        ("vedant", "Vedant's deck as synthesised (67.5 deg electrode)",
-         f"Vedant's deck: {cur('vedant'):.1f} amps, twenty six percent too much, and one "
-         "trajectory hits the anode.", 8),
-        ("vedant_raw", "Vedant's construction with the uncorrected cathode",
-         "Without the aberration correction of the cathode, nineteen trajectories hit the gun, so "
-         "the corrected cathode is the right one to build.", 8),
-        ("tiwary_basu", "Paper 1: Tiwary-Basu curved electrodes",
-         f"The paper one electrodes: {cur('tiwary_basu'):.1f} amps, fourteen percent too little, "
-         "but nothing hits the gun.", 8),
-    ]:
+               "One command builds nine decks, from our code, from Vedant's code and from the "
+               "combined pipeline, and runs them all in target dot exe in parallel. The design asks "
+               "for one hundred twenty amps. Sir's deck gives plus one point five percent, our ANN "
+               "guns plus twenty seven and plus twenty two, Vedant's deck plus twenty six and a "
+               "half, and the combined runs range from minus fourteen to plus thirty eight.",
+               title="python -m src.sim.experiments")
+
+    def anim(name, title, txt, dur):
         s.frames(trajectory_animation(os.path.join(RUNS, name), "PIERCE: " + title,
                                       [f"current {cur(name):.1f} A (design 120 A)"]), txt, min_dur=dur)
-    s.image(montage([("reference", "sir's deck"), ("vedant", "Vedant, 67.5 deg"),
-                     ("vedant_raw", "Vedant, uncorrected cathode"),
-                     ("tiwary_basu", "Paper 1: Tiwary-Basu"), ("psi_57.5", "Paper 2 sweep: 57.5 deg"),
-                     ("psi_62.5", "Paper 2 sweep: 62.5 deg"), ("psi_72.5", "Paper 2 sweep: 72.5 deg"),
-                     (B, "tuned: angle + anode")], os.path.join(WORK, "montage.png")),
-            "Sir's own plotter script, run on every simulation. Paper two's angle sweep is in the "
-            "middle: at seventy two and a half degrees the beam spreads and hits the gun.",
-            title="sir's pierce_plotter.py on all eight runs")
+
+    anim("reference", "sir's reference deck (the check)",
+         f"Sir's own deck first, as a check: {cur('reference'):.1f} amps, reproducing his run "
+         "exactly. First the electrodes, then the field lines, then the electrons converging to "
+         "the waist.", 9)
+    s.card("1. Our code", "The angle from our neural networks, turned into a gun and simulated.",
+           "Part one: our code. Our networks predict the angle; Vaughan's equations turn that "
+           "angle into a gun, and PIERCE simulates it.", kicker="Demo 3")
+    anim("ann_m1", "our ANN M1's angle (32.17 deg)",
+         f"Our model M one predicts thirty two point one seven degrees for this gun, almost "
+         f"exactly Vedant's angle. PIERCE gives {cur('ann_m1'):.1f} amps, twenty seven percent too "
+         "much.", 8)
+    anim("ann_e", "our ANN-E's angle (31.90 deg)",
+         f"Model A N N E predicts thirty one point nine degrees: {cur('ann_e'):.1f} amps, twenty "
+         "two percent too much.", 7)
+    s.card("2. Vedant's code", "His exact angle and his electrode construction, simulated.",
+           "Part two: Vedant's code, his exact angle and his electrode construction.",
+           kicker="Demo 3")
+    anim("vedant", "Vedant's deck as synthesised (67.5 deg electrode)",
+         f"Vedant's deck: {cur('vedant'):.1f} amps, twenty six and a half percent too much, the "
+         "same as our ANN guns. So the error is not the angle; it is the electrode construction.", 9)
+    anim("vedant_raw", "Vedant's construction with the uncorrected cathode",
+         "Without his aberration correction of the cathode, nineteen trajectories hit the gun, so "
+         "the corrected cathode is the right one to build.", 8)
+    s.card("3. Combined code", "Our pipeline around Vedant's construction: the two papers, and "
+           "tuning with sir's simulator in the loop.",
+           "Part three: the combined code. Our pipeline around Vedant's construction: the two "
+           "papers, and tuning with sir's simulator in the loop.", kicker="Demo 3")
+    anim("tiwary_basu", "Paper 1: Tiwary-Basu curved electrodes",
+         f"Paper one's curved electrodes: {cur('tiwary_basu'):.1f} amps, fourteen percent too "
+         "little, but nothing hits the gun.", 8)
+    s.image(montage([("ann_m1", "1. our code: ANN M1"), ("ann_e", "1. our code: ANN-E"),
+                     ("vedant", "2. Vedant's code"), ("vedant_raw", "2. Vedant, uncorrected cathode"),
+                     ("tiwary_basu", "3. Paper 1: Tiwary-Basu"), ("psi_57.5", "3. Paper 2 sweep: 57.5 deg"),
+                     ("psi_72.5", "3. Paper 2 sweep: 72.5 deg"), (B, "3. tuned: angle + anode")],
+                    os.path.join(WORK, "montage.png")),
+            "Sir's own plotter script on all of them: our code, Vedant's code, and the combined "
+            "runs. In paper two's sweep, at seventy two and a half degrees the beam spreads and hits "
+            "the gun.", title="sir's pierce_plotter.py on every run")
     s.terminal(rec("v3_tune"),
                "Then the simulator goes in the loop. First the electrode angle alone is tuned until "
                "the current matches, then the angle and the anode position together, until both "
