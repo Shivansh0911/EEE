@@ -4,24 +4,29 @@ Build the three demo videos.
     python demo/make_videos.py <clone_dir> <work_dir> <out_dir> [1 2 3]
 
 <clone_dir> is a clone of this branch in which demo/capture.py recorded the
-runs (demo_rec/*.json) and target.exe produced demo_rec/run_*/; the website is
-driven from <clone_dir>/web/index.html.
+runs (demo_rec/*.json) and src.sim.experiments produced simulation/runs/*; the
+website is driven from <clone_dir>/web/index.html.
+
+1  our code (ANN, website, old gun drawing), then the two focus-electrode papers
+2  our code + Vedant's code
+3  every simulation in sir's PIERCE (target.exe), with sir's plotters
 """
 
-import glob
+import json
 import os
-import subprocess
 import sys
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from videokit import (BG, F, INK, MONO, SANS_B, Scenes, clear_highlight, highlight, slow_fill)  # noqa: E402
+from videokit import (CAPTION_CSS, F, INK, MONO, SANS_B, SET_CAPTION, Scenes,  # noqa: E402
+                      clear_highlight, highlight, slow_fill)
 
 CLONE, WORK, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 WHICH = sys.argv[4:] or ["1", "2", "3"]
 sys.path.insert(0, CLONE)
 REC = os.path.join(CLONE, "demo_rec")
+RUNS = os.path.join(CLONE, "simulation", "runs")
 URL = "file:///" + os.path.join(CLONE, "web", "index.html").replace("\\", "/")
 os.makedirs(WORK, exist_ok=True)
 os.makedirs(OUT, exist_ok=True)
@@ -59,113 +64,137 @@ HIDE_DECK = "() => { const o = document.getElementById('demo-deck'); if (o) o.re
 
 def tab(page, name):
     page.click(f"#tab-{name}")
-    page.wait_for_timeout(400)
+    page.wait_for_timeout(300)
+
+
+def crop_plot(src, dst):
+    """Sir's plotter draws on a tall 9:16 page; keep the gun plot."""
+    im = Image.open(src).convert("RGB")
+    g = ImageOps.invert(im.convert("L")).point(lambda v: 255 if v > 12 else 0)
+    x0, y0, x1, y1 = g.crop((0, 0, im.width, int(im.height * 0.3))).getbbox()
+    im.crop((max(0, x0 - 20), max(0, y0 - 10), min(im.width, x1 + 20), y1 + 10)).save(dst)
+    return dst
+
+
+def montage(items, out):
+    """Sir's pierce_plotter output for several runs, in a labelled grid."""
+    tiles = []
+    for name, label in items:
+        p = os.path.join(RUNS, name, "pierce_plot_plot1.png")
+        t = Image.open(crop_plot(p, os.path.join(WORK, f"crop_{name}.png")))
+        t.thumbnail((610, 210))
+        tile = Image.new("RGB", (620, 250), (255, 255, 255))
+        tile.paste(t, ((620 - t.width) // 2, 34))
+        ImageDraw.Draw(tile).text((10, 6), label, font=F(SANS_B, 18), fill=(20, 20, 20))
+        tiles.append(tile)
+    rows = (len(tiles) + 1) // 2
+    img = Image.new("RGB", (2 * 630, rows * 258), (30, 33, 42))
+    for i, t in enumerate(tiles):
+        img.paste(t, ((i % 2) * 630 + 5, (i // 2) * 258 + 4))
+    img.save(out)
+    return out
 
 
 # =============================================================================
 def video1():
     s = Scenes(WORK, "v1")
-    s.card("Our Pierce gun tool: the neural network, the old gun drawing, and today's "
-           "cathode and focus-electrode work",
-           "EEE F266 study project. Shivansh Shekher Ojha, Satwik Shrivastava. "
-           "Supervisor: Lalit Kumar.",
-           "Demo one of three. This video runs our own code: the neural network that "
-           "predicts the half beam cone angle of a Pierce electron gun, the website with the old "
-           "gun drawing, and the new cathode and focus electrode work added today.",
-           kicker="Demo 1 of 3")
+    s.card("Our Pierce gun tool, and the two papers",
+           "Part 1: our neural network and website, with the old gun drawing. Part 2: the two "
+           "focus-electrode papers, implemented. EEE F266, Shivansh Shekher Ojha, Satwik "
+           "Shrivastava; supervisor Lalit Kumar.",
+           "Demo one of three. Part one runs our own code: the neural network for the half beam "
+           "cone angle, and the website with the old gun drawing. Part two implements the two "
+           "focus electrode papers sir gave us.", kicker="Demo 1 of 3")
     s.terminal(rec("v1_train"),
-               "First we train our neural network, model M one, from scratch. It is the paper's "
-               "three, three, two, one network, trained by Levenberg Marquardt on the twenty three "
-               "real guns of Panahi's table two. Ten random restarts are scored by five fold cross "
-               "validation inside the training guns. On the seven held out real guns the error is "
-               "seven point nine three percent. The paper claims three point seven four, which we "
-               "could not reproduce.",
+               "First we train our neural network, model M one, from scratch: the paper's three, "
+               "three, two, one network, trained by Levenberg Marquardt on twenty three real guns. "
+               "On the seven held out real guns the error is seven point nine three percent. The "
+               "paper claims three point seven four, which we could not reproduce.",
                title="python -m src.ann.train --model m1")
     s.terminal(rec("v1_stage2"),
-               "Next, the synthetic data stage. Model A N N E learns Vedant's exact solver and "
-               "matches it to zero point zero eight percent. Against real measured guns, the "
-               "classical solver alone is ten point four percent off. The calibrated line at two "
-               "point eight eight percent is not claimed: its gain comes from the waist radius, "
-               "which cannot physically change the angle. So model M one stays our headline.",
+               "Next, the synthetic data stage. Model A N N E learns Vedant's exact solver to zero "
+               "point zero eight percent. Against real guns the classical solver alone is ten point "
+               "four percent off. The two point eight eight line is not claimed, because its gain "
+               "comes from the waist radius, which cannot change the angle. M one stays our headline.",
                title="python -m src.ann.stage2")
 
-    def predict_inputs(p):
-        highlight(p, "#panel-predict .card")
-
     def predict_type(p):
-        slow_fill(p, "#in-P", "2")
-        slow_fill(p, "#in-rw", "1.5")
-        slow_fill(p, "#in-C", "40")
+        slow_fill(p, "#in-P", "2", 40)
+        slow_fill(p, "#in-rw", "1.5", 40)
+        slow_fill(p, "#in-C", "40", 40)
         highlight(p, ".readout")
 
     s.browser(URL + "#predict", [
-        ("This is our website. The Predict tab is the original tool. Three inputs, perveance, "
-         "beam waist and convergence ratio, go into the trained network, and the half beam cone "
-         "angle comes out, computed right here in the browser.", predict_inputs),
-        ("Let us type a gun: perveance two, waist one point five millimetres, convergence forty. "
-         "The network predicts the angle instantly.", predict_type),
-        ("Below it is the old Pierce gun drawing: the cathode, the focus electrode, the anode, and "
-         "the beam converging to its waist. It is a sketch built from the predicted angle, and it "
-         "still uses the old Langmuir Blodgett constant, so its anode is only approximate.",
-         lambda p: highlight(p, "#gun-svg")),
-        ("The comparison card puts the network next to the three classical methods from the paper.",
+        ("This is our website. In the Predict tab, three inputs, perveance, beam waist and "
+         "convergence ratio, go into the trained network, and the cone angle comes out, right in "
+         "the browser.", lambda p: highlight(p, "#panel-predict .card")),
+        ("Typing a gun: perveance two, waist one point five millimetres, convergence forty. The "
+         "network predicts the angle instantly.", predict_type),
+        ("This is the old Pierce gun drawing: cathode, focus electrode, anode, and the beam "
+         "converging to its waist. It is a sketch from the predicted angle, using the old constant, "
+         "so its anode is only approximate.", lambda p: highlight(p, "#gun-svg")),
+        ("The comparison card puts the network next to the three classical methods of the paper.",
          lambda p: highlight(p, "#compare-body")),
-        ("The Dataset tab lists every row with its source: thirty real guns from the paper, and "
-         "synthetic rows clearly marked as not measured.", lambda p: (clear_highlight(p), tab(p, "dataset"))),
-        ("The Method tab explains the network, the input scaling, Levenberg Marquardt training, "
-         "and the physics behind it.", lambda p: (tab(p, "method"), highlight(p, "#arch-svg"))),
+        ("The Dataset tab lists every row with its source: thirty real guns, and synthetic rows "
+         "marked as not measured.", lambda p: (clear_highlight(p), tab(p, "dataset"))),
+        ("The Method tab explains the network, the scaling, the training and the physics.",
+         lambda p: (tab(p, "method"), highlight(p, "#arch-svg"))),
     ])
+    s.card("Part 2: the two focus-electrode papers",
+           "Paper 1: Tiwary and Basu, IEEE TED 1988, synthesis of the focus electrode and anode. "
+           "Paper 2: Gao et al., AIP Advances 2025, effect of the focus-electrode angle.",
+           "Part two. Sir asked us to implement the focus electrode synthesis of two papers. Both "
+           "connect directly to Vedant's code, whose focus electrode is a straight line at Pierce's "
+           "sixty seven point five degrees.", kicker="Demo 1, part 2")
+    s.terminal(rec("v1_paper1"),
+               "Paper one finds the focus electrode and the anode as the zero volt and anode voltage "
+               "equipotentials of the ideal flow, by a conformal map. We trace them exactly. On the "
+               "paper's three guns, the electrode leaves the cathode at sixty seven point five "
+               "degrees, so Vedant's straight line is its tangent, and our anode hits the anode "
+               "sphere exactly, where the paper's interpolation was off by up to zero point four "
+               "percent.", title="python demo/paper1_check.py")
+    s.image(os.path.join(REC, "paper1_overlay.png"),
+            "Our curves, in red, drawn over the paper's own figure two. The cathode and anode arcs "
+            "coincide, and near the beam our electrodes follow the paper's.",
+            title="Tiwary & Basu (1988) Fig. 2, with our curves in red")
 
     def design_open(p):
         tab(p, "design")
-        slow_fill(p, "#ds-V", "20")
-        slow_fill(p, "#ds-I", "1")
-        slow_fill(p, "#ds-rw", "0.5")
-        slow_fill(p, "#ds-Jc", "5")
-        highlight(p, "#panel-design .grid.predict .card")
+        p.click("#ds-presets button:nth-child(2)")
+        highlight(p, "#ds-svg")
 
     def tb(p):
         p.select_option("#ds-elec", "tiwary-basu")
-        p.wait_for_timeout(300)
+        p.wait_for_timeout(200)
         highlight(p, "#ds-svg")
 
-    def knobs(p):
+    def knob(p):
         p.select_option("#ds-elec", "vedant")
         highlight(p, ".ds-electrodes")
-        slow_fill(p, "#ds-psi", "60")
-        slow_fill(p, "#ds-shift", "0.5")
+        slow_fill(p, "#ds-psi", "57.5", 60)
 
     s.browser(URL + "#design", [
-        ("Now the new work. The Design tab takes the four real engineering inputs: voltage, "
-         "current, waist radius and cathode loading. Here, twenty kilovolts, one amp, half a "
-         "millimetre and five amps per square centimetre.", design_open),
-        ("Vedant's method computes theta T, the angle the cathode is built with, and theta raw, "
-         "the analysis angle that every length comes from, plus what a real measured gun would "
-         "likely show.", lambda p: highlight(p, "#panel-design .readout")),
-        ("The drawing is the cathode and electrodes exactly as they will be simulated. The orange "
-         "arc is the cathode, built with the aberration corrected radius. The straight focus "
-         "electrode leaves the cathode rim at Pierce's sixty seven point five degrees.",
-         lambda p: highlight(p, "#ds-svg")),
-        ("Today we added the focus electrode synthesis of Tiwary and Basu, nineteen eighty eight. "
-         "Choosing it replaces the straight electrode and the anode face with the curved "
-         "equipotentials of the ideal electron flow.", tb),
-        ("With Vedant's construction, the electrode angle and the anode position can now be "
-         "changed. These are the two knobs we tuned in sir's simulator.", knobs),
-        ("One click downloads a pierce dot in file that runs directly in sir's target dot exe. "
-         "This is that file.", lambda p: (clear_highlight(p), p.evaluate(SHOW_DECK))),
-        ("The geometry table lists every dimension: cathode and anode radii, spacing, aperture, "
-         "throw, and the electric field in the gap.",
-         lambda p: (p.evaluate(HIDE_DECK), highlight(p, "#ds-rows"))),
+        ("In the Design tab a gun is synthesised by Vedant's method. Here the electrodes follow "
+         "Vedant: a straight focus electrode at sixty seven point five degrees.", design_open),
+        ("Switching to paper one replaces it with the curved equipotential electrode and the "
+         "curved anode face.", tb),
+        ("Paper two studies the angle of that electrode. Here it can be set, for example fifty "
+         "seven point five degrees, and the anode can be moved.", knob),
+        ("Either way, one click gives a pierce dot in file that runs in sir's target dot exe.",
+         lambda p: (clear_highlight(p), p.evaluate(SHOW_DECK))),
     ])
+    s.image(os.path.join(CLONE, "reports", "figures", "sim_psi_sweep.png"),
+            "Paper two swept the electrode angle in a commercial simulator. We ran the same study "
+            "on our gun in sir's simulator: the current rises steadily with the angle, and Pierce's "
+            "sixty seven point five degrees gives too much current. Demo three shows every run.",
+            title="Paper 2's study in sir's PIERCE: current and waist against electrode angle")
     s.terminal(rec("v1_tests"),
-               "Finally, the complete check. Every automated test passes: the physics checks, the "
-               "checks that the browser gives the same numbers as Python, and a live re run of "
-               "sir's simulator.",
-               title="python -m pytest -q", show_from=None)
-    s.card("Next", "Demo 2: our code plus Vedant's code.   Demo 3: our guns in sir's simulator.",
-           "That was our own code. Demo two shows how Vedant's code fits in, and demo three runs "
-           "our guns in sir's simulator.", kicker="End of demo 1")
-    return s.render(os.path.join(OUT, "demo1_our_code.mp4"))
+               "Finally the complete check: every automated test passes, including the paper one "
+               "checks and a live re run of sir's simulator.", title="python -m pytest -q")
+    s.card("Next", "Demo 2: our code plus Vedant's code.   Demo 3: every simulation in sir's PIERCE.",
+           "Demo two shows how Vedant's code fits in, and demo three runs every gun in sir's "
+           "simulator.", kicker="End of demo 1")
+    return s.render(os.path.join(OUT, "demo1_our_code_and_papers.mp4"))
 
 
 # =============================================================================
@@ -231,81 +260,120 @@ def video2():
 def video3():
     from anim import trajectory_animation
     from src.sim import lktron as lk
+    best = json.load(open(os.path.join(CLONE, "reports", "simulation", "tuned_2d.json")))["best"]
+    B = best["variant"]
+
+    def cur(n):
+        return lk.parse_log(os.path.join(RUNS, n, "pierce.log"))["cathode_current_A"]
+
+    def html(n, k):
+        return "file:///" + os.path.join(RUNS, n, k).replace("\\", "/")
+
     s = Scenes(WORK, "v3")
-    s.card("Our guns in sir's simulator (target.exe)",
-           "Dr. Lalit Kumar's LKTRON PIERCE: electric field, space charge and electron "
-           "trajectories, solved together.",
-           "Demo three. Target dot exe is sir's PIERCE simulator. It reads a pierce dot in deck, "
-           "solves the electric field and the space charge together, traces the electrons, and "
-           "repeats until it all agrees. That tells us what a synthesised gun really does.",
-           kicker="Demo 3 of 3")
+    s.card("Every simulation, in sir's PIERCE (target.exe)",
+           "Sir's deck, Vedant's deck, Vedant's with the uncorrected cathode, the Tiwary-Basu "
+           "electrodes, the electrode-angle sweep, and the tuned gun.",
+           "Demo three. Target dot exe is sir's PIERCE simulator: it solves the field and the "
+           "space charge together and traces the electrons. Here every gun our code and Vedant's "
+           "code produce is simulated in it.", kicker="Demo 3 of 3")
     s.image(text_image(os.path.join(CLONE, "simulation", "lktron", "reference_ceeri", "pierce.in"),
                        os.path.join(WORK, "refdeck.png"), "sir's reference deck: pierce.in"),
-            "This is sir's own deck for the klystron gun. Vedant's deck uses the same format, but "
-            "it does not run as written: it is missing the closing slash of the cathode block, and "
-            "its solver settings make PIERCE crash. Our deck writer fixes both.")
+            "This is sir's own deck for the klystron gun. Vedant's deck has the same format but "
+            "did not run: it misses the closing slash of the cathode block, and its solver settings "
+            "crash PIERCE. Our deck writer fixes both.")
+    s.terminal(rec("v3_experiments"),
+               "One command builds all seven decks from Vedant's code and ours, and runs them in "
+               "target dot exe in parallel. The design asks for one hundred twenty amps. Sir's deck "
+               "gives plus one point five percent. Vedant's deck, plus twenty six and a half. With "
+               "the uncorrected cathode, plus forty. The paper one electrodes, minus fourteen and a "
+               "half. And the electrode angle moves the current from plus one to plus thirty eight "
+               "percent.", title="python -m src.sim.experiments")
+    for name, title, txt, dur in [
+        ("reference", "Sir's reference deck",
+         f"Sir's own deck first, as a check: {cur('reference'):.1f} amps, reproducing his run "
+         "exactly. First the electrodes, then the field lines, then the electrons converging to "
+         "the waist.", 9),
+        ("vedant", "Vedant's deck as synthesised (67.5 deg electrode)",
+         f"Vedant's deck: {cur('vedant'):.1f} amps, twenty six percent too much, and one "
+         "trajectory hits the anode.", 8),
+        ("vedant_raw", "Vedant's construction with the uncorrected cathode",
+         "Without the aberration correction of the cathode, nineteen trajectories hit the gun, so "
+         "the corrected cathode is the right one to build.", 8),
+        ("tiwary_basu", "Paper 1: Tiwary-Basu curved electrodes",
+         f"The paper one electrodes: {cur('tiwary_basu'):.1f} amps, fourteen percent too little, "
+         "but nothing hits the gun.", 8),
+    ]:
+        s.frames(trajectory_animation(os.path.join(RUNS, name), "PIERCE: " + title,
+                                      [f"current {cur(name):.1f} A (design 120 A)"]), txt, min_dur=dur)
+    s.image(montage([("reference", "sir's deck"), ("vedant", "Vedant, 67.5 deg"),
+                     ("vedant_raw", "Vedant, uncorrected cathode"),
+                     ("tiwary_basu", "Paper 1: Tiwary-Basu"), ("psi_57.5", "Paper 2 sweep: 57.5 deg"),
+                     ("psi_62.5", "Paper 2 sweep: 62.5 deg"), ("psi_72.5", "Paper 2 sweep: 72.5 deg"),
+                     (B, "tuned: angle + anode")], os.path.join(WORK, "montage.png")),
+            "Sir's own plotter script, run on every simulation. Paper two's angle sweep is in the "
+            "middle: at seventy two and a half degrees the beam spreads and hits the gun.",
+            title="sir's pierce_plotter.py on all eight runs")
+    s.terminal(rec("v3_tune"),
+               "Then the simulator goes in the loop. First the electrode angle alone is tuned until "
+               "the current matches, then the angle and the anode position together, until both "
+               "the current and the beam waist match the design.",
+               title="python -m src.sim.experiments --tune")
+    s.frames(trajectory_animation(os.path.join(RUNS, B),
+                                  f"PIERCE: tuned gun, {best['psi_deg']:.1f} deg, anode "
+                                  f"+{best['anode_shift_mm']:.2f} mm",
+                                  [f"current {cur(B):.1f} A (design 120 A)",
+                                   f"waist {best['compare']['sim_waist_mm_refined']:.2f} mm "
+                                   "(design 9.8 mm)"]),
+             f"The tuned gun: {cur(B):.1f} amps, within one percent of the design, a waist within "
+             "two percent, and no electron hits the gun.", min_dur=9)
 
-    def runinfo(name):
-        c = lk.parse_log(os.path.join(REC, name, "pierce.log"))
-        return c
+    def rotate(p):
+        p.mouse.move(640, 380)
+        p.mouse.down()
+        p.mouse.move(820, 330, steps=40)
+        p.mouse.up()
 
-    v = runinfo("run_vedant")
-    s.terminal(rec("v3_vedant_run"),
-               "Our pipeline now runs Vedant's deck for that gun in target dot exe. The design asks "
-               f"for one hundred twenty amps. PIERCE finds {v['cathode_current_A']:.1f} amps, "
-               "about twenty six percent too much.",
-               title="python -m src.sim.deck --V 150000 --I 120 --rw 9.8 --Jc 5 --run")
-    s.frames(trajectory_animation(os.path.join(REC, "run_vedant"),
-                                  "What PIERCE computed: Vedant's deck as synthesised",
-                                  [f"current {v['cathode_current_A']:.1f} A (design 120 A)",
-                                   "focus electrode at 67.5 deg to the beam edge"]),
-             "Here is what PIERCE computed. First the electrodes, then the equipotential lines of "
-             "the field, then the electron trajectories leaving the cathode and converging to the "
-             "waist. The inset shows the current settling over PIERCE's iterations, well above the "
-             "design line.", min_dur=14)
-    t = runinfo("run_tuned")
-    s.terminal(rec("v3_tuned_run"),
-               "The focus electrode angle controls the current. We tuned the angle and the anode "
-               "position with PIERCE in the loop. At sixty five point seven degrees, with the anode "
-               "two point three millimetres further away, the current comes within one percent of "
-               "the design, and the waist within two percent.",
-               title="python -m src.sim.deck ... --psi 65.656 --anode-shift 2.265 --run")
-    s.frames(trajectory_animation(os.path.join(REC, "run_tuned"),
-                                  "What PIERCE computed: the tuned gun",
-                                  [f"current {t['cathode_current_A']:.1f} A (design 120 A)",
-                                   "focus electrode 65.7 deg, anode +2.27 mm"]),
-             "The tuned gun. The current settles on the design line, and no electron hits the gun.",
-             min_dur=12)
-    plots = sorted(glob.glob(os.path.join(REC, "run_tuned", "pierce_plot*.png")))
-    if plots:
-        s.image(plots[0], "Sir's own plotter script reads the same output files and draws the "
-                "electrodes, trajectories and equipotentials.", title="sir's pierce_plotter.py")
-    s.terminal(rec("v3_tb_run"),
-               "The curved Tiwary and Basu electrodes, from today's paper, give about fourteen "
-               "percent less current than designed. Neither construction is right first time, "
-               "which is exactly why the simulator matters.",
-               title="python -m src.sim.deck ... --electrodes tiwary-basu --run")
-    s.browser(URL + "#sim", [
-        ("The Simulation tab on the website keeps all of these runs.",
-         lambda p: highlight(p, "#sim-stats")),
-        ("The table compares each run with the design: current, electrons lost in the gun, throw "
-         "and waist.", lambda p: highlight(p, "#sim-table")),
-        ("The viewer draws the trajectories of any run in sir's colours. This is Vedant's deck as "
-         "synthesised.", lambda p: (p.select_option("#sim-pick", "1"), highlight(p, "#sim-svg"))),
-        ("And this is the tuned gun.", lambda p: p.select_option("#sim-pick", "8")),
-        ("The sweep shows the current rising steadily with the focus electrode angle: the study of "
-         "Gao and colleagues, twenty twenty five, repeated on our gun.",
-         lambda p: highlight(p, "#sim-sweep")),
+    def axial(p):
+        p.goto(html(B, "plot_index2_Normalized_Axial_Electric_Field.html"))
+        p.wait_for_timeout(1500)
+        p.add_style_tag(content=CAPTION_CSS)
+        p.evaluate(SET_CAPTION, "And the axial electric field: strongest in the cathode to anode "
+                                "gap, where the electrons are accelerated.")
+        p.mouse.move(640, 380)
+        p.mouse.down()
+        p.mouse.move(470, 400, steps=40)
+        p.mouse.up()
+
+    s.browser(html(B, "plot_index1_Normalized_Potential.html"), [
+        ("Sir's other script, new 3 D, draws the potential over the whole grid as a surface: zero "
+         "at the cathode, rising to the anode voltage.", rotate),
+        ("And the axial electric field: strongest in the cathode to anode gap, where the electrons "
+         "are accelerated.", axial),
     ])
+    s.browser(URL + "#sim", [
+        ("All of this is on the website's Simulation tab: the summary,",
+         lambda p: highlight(p, "#sim-stats")),
+        ("every run against the design,", lambda p: highlight(p, "#sim-table")),
+        ("the trajectories of any run,",
+         lambda p: (p.select_option("#sim-pick", label="Tiwary & Basu (1988) electrodes"),
+                    highlight(p, "#sim-svg"))),
+        ("and paper two's angle sweep.", lambda p: highlight(p, "#sim-sweep")),
+    ])
+    s.terminal(rec("v3_tuned_run"),
+               "And for any new gun, one command writes the deck, runs target dot exe, and compares "
+               "the result with the design.",
+               title="python -m src.sim.deck --V 150000 --I 120 --rw 9.8 --Jc 5 --psi 65.656 "
+                     "--anode-shift 2.265 --run")
     s.card("Summary",
-           "Vedant's synthesis gives the gun; sir's simulator tests it; tuning with the simulator "
-           "in the loop makes it meet the design. Limits: one reference gun, a 0.5 mm grid, and "
-           "Vaughan's throw formula stays about 30 % short in every run.",
-           "In short: Vedant's synthesis gives the gun, sir's simulator tests it, and tuning with "
-           "the simulator in the loop makes it meet the design. The limits: one reference gun, a "
-           "half millimetre grid, and the throw from Vaughan's formula stays about thirty percent "
-           "short in every run.", kicker="End of demo 3")
-    return s.render(os.path.join(OUT, "demo3_target_exe_simulation.mp4"))
+           "Vedant's synthesis builds the gun; sir's simulator tests it; both papers are "
+           "implemented and simulated; tuning with the simulator in the loop meets the design "
+           "current and waist. Limits: one reference gun, 0.5 mm grid, Vaughan's throw stays about "
+           "30 % short.",
+           "In short: Vedant's synthesis builds the gun, sir's simulator tests it, both papers are "
+           "implemented and simulated, and tuning with the simulator in the loop meets the design. "
+           "The limits: one reference gun, a half millimetre grid, and Vaughan's throw formula "
+           "stays about thirty percent short.", kicker="End of demo 3")
+    return s.render(os.path.join(OUT, "demo3_all_simulations_target_exe.mp4"))
 
 
 if __name__ == "__main__":

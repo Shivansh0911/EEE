@@ -89,7 +89,7 @@ def test_recorded_results_are_consistent():
     s = json.load(open(os.path.join(SIM, "summary.json"), encoding="utf-8"))
     v = s["variants"]
     assert v["reference"]["compare"]["sim_current_A"] == pytest.approx(121.7416)
-    for name in ("reference", "vedant", "tiwary_basu", "psi_57.5", "psi_62.5"):
+    for name in ("reference", "ann_m1", "ann_e", "vedant", "tiwary_basu", "psi_57.5", "psi_62.5"):
         assert v[name]["ok"]
     # current rises monotonically with the focus-electrode angle
     cur = [v[n]["compare"]["sim_current_A"] for n in ("psi_57.5", "psi_62.5", "vedant",
@@ -101,3 +101,10 @@ def test_recorded_results_are_consistent():
     assert t2["compare"]["waist_inside_domain"]
     assert abs(t2["compare"]["current_err_pct"]) < 1 and abs(t2["compare"]["waist_err_pct"]) < 3
     assert t2["compare"]["lost_in_gun"] == 0
+
+
+def test_geometry_from_theta_reproduces_vedant_given_his_angle():
+    exact = va.synthesize(**ex.GUN)
+    g = ex.geometry_from_theta(exact, exact["thetaT"])
+    for k in ("Rc_mm", "Ra_mm", "zac_mm", "za_mm", "zw_mm", "RcT_mm", "ra_mm"):
+        assert g[k] == pytest.approx(exact[k], rel=1e-10)

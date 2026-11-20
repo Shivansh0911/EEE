@@ -40,7 +40,7 @@ BAD = (239, 112, 112)
 
 # --- narration -----------------------------------------------------------------
 
-def tts(text, path, rate=0):
+def tts(text, path, rate=2):
     """Speak `text` to a WAV with the Windows voice; return its duration in s."""
     if not os.path.exists(path):
         esc = text.replace("'", "''")
@@ -187,7 +187,7 @@ class Scenes:
     def card(self, title, subtitle, text, kicker=""):
         wav, d = self._wav(text)
         out = self._out()
-        still(card(title, subtitle, text, kicker), wav, d + 0.8, out)
+        still(card(title, subtitle, text, kicker), wav, d + 0.4, out)
         self.parts.append(out)
 
     def image(self, path, text, title=""):
@@ -201,7 +201,7 @@ class Scenes:
         src.thumbnail(box)
         img.paste(src, ((W - src.width) // 2, top + (box[1] - src.height) // 2))
         out = self._out()
-        still(caption(img, text), wav, d + 0.8, out)
+        still(caption(img, text), wav, d + 0.4, out)
         self.parts.append(out)
 
     def terminal(self, record, text, title="", show_from=None, max_speed=None):
@@ -231,11 +231,11 @@ class Scenes:
             tc += gap
             l[0] = tc
         t_end = max([l[0] for l in lines] + [0.5])
-        type_s, hold = 1.6, 2.0
+        type_s, hold = 1.0, 1.0
         speed = max(1.0, t_end / max(1.0, d - type_s - 1.0))
         if max_speed:
             speed = min(speed, max_speed)
-        dur = max(d + 0.8, type_s + t_end / speed + hold)
+        dur = max(d + 0.4, type_s + t_end / speed + hold)
         fm, fb = F(MONO, 15), F(MONO_B, 15)
         lh, x0, y0 = 19, 24, 52
         rows = (H - CAP_H - y0 - 10) // lh
@@ -293,7 +293,7 @@ class Scenes:
     def frames(self, gen_factory, text, min_dur=0):
         """Custom animation: gen_factory(dur) yields PIL frames for dur seconds."""
         wav, d = self._wav(text)
-        dur = max(d + 0.8, min_dur)
+        dur = max(d + 0.4, min_dur)
         out = self._out()
         encode_frames((caption(im, text) for im in gen_factory(dur)), wav, dur, out)
         self.parts.append(out)
@@ -317,7 +317,7 @@ class Scenes:
             page = ctx.new_page()
             t0 = time.time()
             page.goto(url)
-            page.wait_for_timeout(600)
+            page.wait_for_timeout(400)
             page.add_style_tag(content=CAPTION_CSS)
             if setup:
                 setup(page)
@@ -328,7 +328,7 @@ class Scenes:
                 ta = time.time()
                 if action:
                     action(page)
-                left = d + 0.7 - (time.time() - ta)
+                left = d + 0.3 - (time.time() - ta)
                 if left > 0:
                     page.wait_for_timeout(int(left * 1000))
             total = time.time() - t0
@@ -345,7 +345,14 @@ class Scenes:
         self.parts.append(out)
 
     def render(self, out):
-        concat(self.parts, out)
+        """Join the scenes, then normalise loudness for the whole video (EBU R128,
+        -14 LUFS, the level of online video): the SAPI voice is quiet by default."""
+        tmp = out + ".tmp.mp4"
+        concat(self.parts, tmp)
+        subprocess.run([FFMPEG, "-y", "-loglevel", "error", "-i", tmp, "-c:v", "copy",
+                        "-af", "loudnorm=I=-14:TP=-1.0:LRA=11", "-ar", "44100", "-c:a", "aac",
+                        "-b:a", "160k", "-movflags", "+faststart", out], check=True)
+        os.remove(tmp)
         return out
 
 

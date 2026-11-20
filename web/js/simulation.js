@@ -24,11 +24,12 @@
   function stats() {
     var byKey = {};
     S.variants.forEach(function (v) { byKey[v.label] = v; });
-    var ved = S.variants[1].compare, t1 = S.variants[7].compare, t2 = S.variants[8].compare;
+    var find = function (pre) { return S.variants.filter(function (v) { return v.key.indexOf(pre) === 0; })[0]; };
+    var ved = find("vedant").compare, T1 = find("tuned_psi"), t1 = T1.compare, t2 = find("tune2d").compare;
     var st = function (n, l) { return '<div class="stat"><div class="n">' + n + '</div><div class="l">' + l + "</div></div>"; };
     $("sim-stats").innerHTML =
       st(sg(ved.current_err_pct, 1), "Vedant's deck as built: current vs design, in PIERCE") +
-      st(sg(t1.current_err_pct, 1), "after tuning the electrode angle (ψ " + f(S.variants[7].notes.psi_deg, 1) + "°)") +
+      st(sg(t1.current_err_pct, 1), "after tuning the electrode angle (ψ " + f(T1.notes.psi_deg, 1) + "°)") +
       st(sg(t2.current_err_pct, 1) + " / " + sg(t2.waist_err_pct, 1),
          "current / waist after tuning angle and anode (ψ " + f(S.tuned_2d.psi_deg, 1) +
          "°, anode +" + f(S.tuned_2d.anode_shift_mm, 2) + " mm)");
@@ -124,9 +125,10 @@
       o.value = i; o.textContent = v.label;
       pick.appendChild(o);
     });
-    pick.value = 8;
+    var last = S.variants.length - 1;
+    pick.value = last;
     pick.addEventListener("change", function () { draw(+pick.value); });
-    draw(8);
+    draw(last);
     sweep();
   }
 

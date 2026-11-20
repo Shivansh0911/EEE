@@ -92,6 +92,51 @@ def uncorrected(result):
     return r
 
 
+def ann_theta(exact, model):
+    """theta_T predicted by one of our networks for this gun's (P, rw, C).
+    model: "m1" (trained on the 23 real guns) or "anne" (trained on Vedant's solver)."""
+    from ..ann.stage2 import predict_payload
+    from ..export.weights_to_json import load_model
+    p = load_model(os.path.join(ds.repo_root(), "models", f"model_{model}.json"))
+    return float(predict_payload(p, np.array([[exact["muP"], exact["rw_mm"], exact["C"]]]))[0, 0])
+
+
+def geometry_from_theta(exact, thetaT_deg):
+    """
+    The gun Vedant's equations build when the angle is GIVEN instead of solved:
+    theta_raw from theta_T (sin theta_raw = 0.905 sin theta_T), then Vaughan's
+    Eqs. (3), (5), (15)-(21) exactly as his solver applies them after its solve,
+    with his relativistic factor for this gun. This is how our ANN's angle turns
+    into a gun: our original code predicts the angle but has no electrode builder.
+    """
+    from ..physics import lb
+    ri = exact["raw_inches"]
+    rc, rw, muP, kf = ri["rc"], ri["rw"], exact["muP"], exact["rel_factor"]
+    th = math.asin(lb.ABERRATION_K * math.sin(math.radians(thetaT_deg)))
+    a = math.sqrt(lb.VAUGHAN_CONE_CONST * kf * (1 - math.cos(th)) / muP)
+    y = float(lb.y_from_a(a))
+    R = rc * math.exp(-y) / rw
+    Rc = rc / math.sin(th)
+    Ra = Rc * math.exp(-y)
+    rb = rc * math.exp(-y)
+    ra = lb.APERTURE_FACTOR * rb
+    zac = Rc - Ra
+    disc = Ra ** 2 - ra ** 2
+    za = Rc - math.sqrt(disc) if disc > 0 else Rc
+    Rp = max(R - 1, 0.0)
+    zw = zac + rw * (11 * Rp ** 0.5 + 1.32 * Rp + 0.0615 * Rp ** 2 - 0.00167 * Rp ** 3) / math.sqrt(muP)
+    inches = {"rw": rw, "rc": rc, "Rc": Rc, "Ra": Ra, "zac": zac, "za": za, "rb_za": rb,
+              "ra": ra, "zw": zw, "RcT": lb.ABERRATION_K * Rc}
+    r = dict(exact)
+    r.update(inches)
+    r["raw_inches"] = inches
+    for k, v in inches.items():
+        r[k + "_mm"] = v * 25.4
+    r["rw_mm"] = exact["rw_mm"]
+    r.update(theta=math.degrees(th), thetaT=thetaT_deg, R=R, za_valid=disc > 0)
+    return r
+
+
 def tiwary_basu_rows(result):
     """
     Deck rows for the Tiwary-Basu electrodes on the ideal flow.
@@ -151,6 +196,14 @@ def build(name, exact):
         rows, meta, dp = _vedant_rows(exact)
         return (lk.deck_text(rows, title=title, h=H, d=D, crad=meta["Rc_mm"], rc=exact["rc_mm"]),
                 meta["Rc_mm"], {"psi_deg": meta["psi_deg"], "cathode": "RcT (corrected)"})
+    if name in ("ann_m1", "ann_e"):
+        th = ann_theta(exact, "m1" if name == "ann_m1" else "anne")
+        r = geometry_from_theta(exact, th)
+        rows, meta, dp = _vedant_rows(r)
+        return (lk.deck_text(rows, title=title, h=H, d=D, crad=meta["Rc_mm"], rc=exact["rc_mm"]),
+                meta["Rc_mm"], {"psi_deg": meta["psi_deg"], "cathode": "RcT (corrected)",
+                                "thetaT_ann_deg": th, "thetaT_vedant_deg": exact["thetaT"],
+                                "designed_throw_mm": r["zw_mm"]})
     if name == "vedant_raw":
         r = uncorrected(exact)
         rows, meta, dp = _vedant_rows(r)
@@ -396,7 +449,7 @@ def main(argv=None):
     a = p.parse_args(argv)
     if a.tune:
         return write_tunings()
-    names = ["reference", "vedant", "vedant_raw", "tiwary_basu"] + \
+    names = ["reference", "ann_m1", "ann_e", "vedant", "vedant_raw", "tiwary_basu"] + \
         [f"psi_{x:g}" for x in PSI_SWEEP]
     if a.only:
         names = [n for n in names if n in a.only] or a.only

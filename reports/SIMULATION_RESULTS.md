@@ -7,6 +7,8 @@ Trajectories that stop before the waist hit the gun's own electrodes ('lost in g
 | Variant | Current A | vs design | Lost in gun | Throw mm | vs design | Waist mm | vs design | Run s |
 |---|---|---|---|---|---|---|---|---|
 | reference | 121.74 | +1.5 % | 0/57 | 88.0 | +13.1 % | 7.41 | -24.4 % | 38 |
+| ann_m1 | 151.87 | +26.6 % | 1/58 | 83.9 | +7.8 % | 12.07 | +23.2 % | 41 |
+| ann_e | 146.06 | +21.7 % | 0/58 | 87.5 | +12.5 % | 11.93 | +21.8 % | 41 |
 | vedant | 151.79 | +26.5 % | 1/58 | 84.0 | +8.0 % | 12.06 | +23.0 % | 48 |
 | vedant_raw | 168.48 | +40.4 % | 19/57 | 125.3 | +61.1 % | 12.22 | +24.7 % | 46 |
 | tiwary_basu | 102.62 | -14.5 % | 0/57 | 100.7 | +29.5 % | 6.51 | -33.6 % | 42 |

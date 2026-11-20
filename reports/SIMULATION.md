@@ -46,7 +46,9 @@ as in his deck.
 | Run | Current vs 120 A | Lost in gun | Waist vs 9.8 mm |
 |---|---|---|---|
 | Sir's reference deck | +1.5 % | 0 / 57 | −24.4 % |
-| Vedant's deck as built (ψ 67.5°, corrected cathode R_cT) | +26.5 % | 1 / 58 | +23.0 % |
+| **Our code:** angle from our ANN M1 (32.17°), gun built from it | +26.6 % | 1 / 58 | +23.2 % |
+| **Our code:** angle from our ANN-E (31.90°), gun built from it | +21.7 % | 0 / 58 | +21.8 % |
+| **Vedant's code:** his deck as built (32.16°, ψ 67.5°, corrected cathode R_cT) | +26.5 % | 1 / 58 | +23.0 % |
 | Vedant's construction, uncorrected cathode R_c | +40.4 % | 19 / 57 | +24.7 % |
 | Tiwary–Basu electrodes | −14.5 % | 0 / 57 | −33.6 % |
 | ψ 57.5° / 62.5° / 72.5° | +1.0 / +13.4 / +38.4 % | 0 / 0 / 32 | −33.2 / −3.1 % / no waist |
@@ -54,6 +56,16 @@ as in his deck.
 | ψ 65.66° and anode +2.27 mm, tuned | **−0.7 %** | 0 / 58 | **−1.9 %** |
 
 What it says:
+
+0. **Our code, Vedant's code, combined.** Our original code predicts the angle but
+   has no electrode builder, so "our code" in PIERCE is our ANN's angle turned into
+   a gun by Vaughan's equations (`geometry_from_theta`, which reproduces Vedant's
+   geometry to 1e-14 when given his angle). M1's angle is within 0.03 % of
+   Vedant's for this gun and simulates the same; ANN-E's (C = 7.95 is just below
+   its training range) differs by 0.8 % and draws 5 % less current. **Whichever
+   code supplies the angle, the gun draws 22–27 % too much current: the error is
+   in the electrode construction, not the angle.** The combined pipeline
+   (Tiwary–Basu option, angle sweep, simulation-in-the-loop tuning) is what fixes it.
 
 1. **Vedant's deck, as synthesised, draws 27 % too much current in a field solve.**
    The synthesis equations do not see the focus-electrode field in detail; the
