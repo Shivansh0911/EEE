@@ -101,12 +101,15 @@ def caption(img, text):
     d = ImageDraw.Draw(img)
     d.rectangle([0, H - CAP_H, W, H], fill=(10, 11, 15))
     d.line([0, H - CAP_H, W, H - CAP_H], fill=(44, 49, 61), width=1)
-    f = F(SANS, 21)
-    lines = wrap(text, f, W - 80, d)[:3]
-    y = H - CAP_H + (CAP_H - 28 * len(lines)) // 2
+    for size, lh, most in ((21, 28, 3), (18, 23, 4), (16, 20, 5)):   # shrink to fit
+        f = F(SANS, size)
+        lines = wrap(text, f, W - 80, d)
+        if len(lines) <= most:
+            break
+    y = H - CAP_H + (CAP_H - lh * len(lines)) // 2
     for ln in lines:
         d.text((40, y), ln, font=f, fill=INK)
-        y += 28
+        y += lh
     return img
 
 
@@ -217,7 +220,17 @@ class Scenes:
         lines = [[t, tidy(l)] for t, l in lines]
         if show_from:
             lines = [l for l in lines if l[1].strip() and not any(s in l[1] for s in show_from)]
-        t_end = max([l[0] for l in lines] + [rec["seconds"]])
+        # Shorten long silent waits (a solver computing) to MAX_GAP so the screen
+        # is not empty for most of the narration; the badge says so.
+        MAX_GAP, prev, tc, shortened = 2.0, 0.0, 0.0, False
+        for l in lines:
+            gap = l[0] - prev
+            prev = l[0]
+            if gap > MAX_GAP:
+                gap, shortened = MAX_GAP, True
+            tc += gap
+            l[0] = tc
+        t_end = max([l[0] for l in lines] + [0.5])
         type_s, hold = 1.6, 2.0
         speed = max(1.0, t_end / max(1.0, d - type_s - 1.0))
         if max_speed:
@@ -227,8 +240,11 @@ class Scenes:
         lh, x0, y0 = 19, 24, 52
         rows = (H - CAP_H - y0 - 10) // lh
         cmd = rec["command"].replace("python -m ", "python -m ")
-        badge = (f"real run, {rec['seconds']:.0f} s, replayed {speed:.0f}x faster" if speed > 1.5
-                 else f"real run, {rec['seconds']:.0f} s")
+        badge = f"real run, {rec['seconds']:.0f} s"
+        if shortened:
+            badge += ", waiting time shortened"
+        if speed > 1.5:
+            badge += f", replayed {speed:.0f}x faster"
         base = Image.new("RGB", (W, H), (12, 13, 17))
         bd = ImageDraw.Draw(base)
         bd.rectangle([0, 0, W, 36], fill=(30, 33, 42))
