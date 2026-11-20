@@ -82,6 +82,7 @@ def montage(items, out):
     for name, label in items:
         p = os.path.join(RUNS, name, "pierce_plot_plot1.png")
         t = Image.open(crop_plot(p, os.path.join(WORK, f"crop_{name}.png")))
+        t = t.crop((0, 0, int(t.width * 0.72), t.height))     # drop the legend box
         t.thumbnail((610, 210))
         tile = Image.new("RGB", (620, 250), (255, 255, 255))
         tile.paste(t, ((620 - t.width) // 2, 34))
@@ -345,28 +346,22 @@ def video3():
              f"The tuned gun: {cur(B):.1f} amps, within one percent of the design, a waist within "
              "two percent, and no electron hits the gun.", min_dur=9)
 
-    def rotate(p):
-        p.mouse.move(640, 380)
-        p.mouse.down()
-        p.mouse.move(820, 330, steps=40)
-        p.mouse.up()
-
-    def axial(p):
-        p.goto(html(B, "plot_index2_Normalized_Axial_Electric_Field.html"))
-        p.wait_for_timeout(1500)
-        p.add_style_tag(content=CAPTION_CSS)
-        p.evaluate(SET_CAPTION, "And the axial electric field: strongest in the cathode to anode "
-                                "gap, where the electrons are accelerated.")
-        p.mouse.move(640, 380)
-        p.mouse.down()
-        p.mouse.move(470, 400, steps=40)
-        p.mouse.up()
+    def rotate(dx, dy):
+        def act(p):
+            p.wait_for_timeout(600)
+            p.mouse.move(640, 380)
+            p.mouse.down()
+            p.mouse.move(640 + dx, 380 + dy, steps=50)
+            p.mouse.up()
+        return act
 
     s.browser(html(B, "plot_index1_Normalized_Potential.html"), [
         ("Sir's other script, new 3 D, draws the potential over the whole grid as a surface: zero "
-         "at the cathode, rising to the anode voltage.", rotate),
-        ("And the axial electric field: strongest in the cathode to anode gap, where the electrons "
-         "are accelerated.", axial),
+         "at the cathode, rising to the anode voltage.", rotate(110, 15)),
+    ])
+    s.browser(html(B, "plot_index2_Normalized_Axial_Electric_Field.html"), [
+        ("The same script draws the axial and radial electric field on the same grid, from "
+         "PIERCE's own output file.", rotate(-90, 10)),
     ])
     s.browser(URL + "#sim", [
         ("All of this is on the website's Simulation tab: the summary,",
