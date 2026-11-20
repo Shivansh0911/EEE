@@ -389,6 +389,228 @@ def video3():
     return s.render(os.path.join(OUT, "demo3_all_simulations_target_exe.mp4"))
 
 
+# =============================================================================
+def lines_image(blocks, out, width=1240):
+    """Text panels side by side: blocks = [(title, [lines], {line_index: colour})]."""
+    n = len(blocks)
+    col_w = width // n
+    h = 60 + 19 * max(len(b[1]) for b in blocks) + 20
+    img = Image.new("RGB", (width, h), (12, 13, 17))
+    d = ImageDraw.Draw(img)
+    for k, (title, lines, marks) in enumerate(blocks):
+        x = k * col_w + 14
+        d.text((x, 10), title, font=F(SANS_B, 19), fill=INK)
+        for i, ln in enumerate(lines):
+            d.text((x, 46 + 19 * i), ln[: col_w // 8], font=F(MONO, 14),
+                   fill=marks.get(i, (200, 210, 225)))
+        if k:
+            d.line([k * col_w, 0, k * col_w, h], fill=(44, 49, 61), width=2)
+    img.save(out)
+    return out
+
+
+def video4():
+    s = Scenes(WORK, "v4")
+    s.card("Our website: the beam-focusing electrode from Tiwary & Basu (1988)",
+           "Inputs P, r_w and C go into our neural network for the half-beam cone angle; Tiwary and "
+           "Basu's synthesis then gives the focus electrode, its angle, and the anode face.",
+           "This demo shows our website after adding Tiwary and Basu's nineteen eighty eight paper. "
+           "From the input parameters it now calculates the beam focusing electrode and its angle.",
+           kicker="Demo: Tiwary & Basu on our website")
+    s.terminal(rec("v1_paper1"),
+               "First, the paper's method, checked on the paper's own three guns. The focus electrode "
+               "is the zero volt equipotential of the ideal electron flow. It leaves the cathode rim at "
+               "sixty seven point five degrees to the beam edge, and our anode curve hits the anode "
+               "sphere exactly.", title="python demo/paper1_check.py")
+    s.image(os.path.join(REC, "paper1_overlay.png"),
+            "Our curves in red, drawn over the paper's own figure two: they follow the paper's "
+            "electrodes near the beam.", title="Tiwary & Basu (1988) Fig. 2, with our curves in red")
+
+    def gun1(p):
+        slow_fill(p, "#in-P", "2", 40)
+        slow_fill(p, "#in-rw", "1.5", 40)
+        slow_fill(p, "#in-C", "40", 40)
+        highlight(p, ".readout")
+
+    def gun2(p):
+        slow_fill(p, "#in-P", "0.3", 40)
+        slow_fill(p, "#in-rw", "0.62", 40)
+        slow_fill(p, "#in-C", "207.6", 40)
+        highlight(p, "#gun-svg")
+
+    s.browser(URL + "#predict", [
+        ("This is the Predict tab. The three inputs are perveance, beam waist radius and "
+         "convergence ratio.", lambda p: highlight(p, "#panel-predict .card")),
+        ("For perveance two, waist one point five millimetres and convergence forty, our network "
+         "predicts a half beam cone angle of forty point nine degrees.", gun1),
+        ("From these inputs and that angle, Tiwary and Basu's method builds the gun. The orange arc "
+         "is the cathode. Its radius is root C times the waist, and its curvature follows from the "
+         "angle.", lambda p: highlight(p, "#gun-svg")),
+        ("The white curve is the beam focusing electrode: the zero volt equipotential of the paper. "
+         "It leaves the cathode rim at sixty seven point five degrees to the beam edge, which here "
+         "is twenty six point six degrees to the axis. The grey curve is the anode face.",
+         lambda p: highlight(p, "#gun-svg")),
+        ("The table lists every number: the cathode and anode radii, the spacing, the electrode "
+         "angle to the beam edge and to the axis, and where the electrode and anode end.",
+         lambda p: highlight(p, "#geom-rows")),
+        ("Change the gun and everything is recomputed instantly. A high convergence gun: perveance "
+         "zero point three, waist zero point six two, convergence two hundred and seven. The angle "
+         "is now twenty eight point four degrees, so the electrode sits at thirty nine point one "
+         "degrees to the axis.", gun2),
+        ("The buttons load real held out guns from the paper's table, with their measured angle "
+         "for comparison.", lambda p: (p.click("#preset-row button"), highlight(p, "#messages"))),
+    ])
+
+    def design_tb(p):
+        tab(p, "design")
+        p.click("#ds-presets button:nth-child(2)")
+        p.select_option("#ds-elec", "tiwary-basu")
+        p.wait_for_timeout(200)
+        highlight(p, "#ds-svg")
+
+    s.browser(URL + "#design", [
+        ("In the Design tab, the same paper's curved electrodes can be built into a full gun and "
+         "downloaded as a deck for sir's simulator.", design_tb),
+    ])
+    s.card("Summary",
+           "Inputs -> our network's angle -> Tiwary & Basu: the focus electrode (V = 0) at 67.5 deg "
+           "to the beam edge = 67.5 - theta to the axis, and the anode face (V = Va). The browser's "
+           "numbers match our Python implementation to one part in a billion.",
+           "So the website now takes the input parameters, predicts the angle with our network, and "
+           "uses only Tiwary and Basu's paper to give the beam focusing electrode and its angle. The "
+           "browser's numbers match our tested Python version to one part in a billion.",
+           kicker="End")
+    return s.render(os.path.join(OUT, "demoA_website_tiwary_basu.mp4"))
+
+
+# =============================================================================
+def video5():
+    from anim import trajectory_animation
+    from src.sim import lktron as lk
+    best = json.load(open(os.path.join(CLONE, "reports", "simulation", "tuned_2d.json")))["best"]
+    B = best["variant"]
+
+    def cur(n):
+        return lk.parse_log(os.path.join(RUNS, n, "pierce.log"))["cathode_current_A"]
+
+    s = Scenes(WORK, "v5")
+    s.card("How our code runs on sir's code: target.exe (LKTRON PIERCE)",
+           "What target.exe is, how our code drives it, the fixes it needed, and every output.",
+           "This demo shows how our code works with sir's simulator, target dot exe, and what it "
+           "produced.", kicker="Demo: our code on sir's simulator")
+    s.card("What target.exe is",
+           "LKTRON PIERCE by Dr. Lalit Kumar. Input: pierce.in, the electrode outline as points. It "
+           "solves the electric field on a grid, emits electrons from the cathode by Child's law, "
+           "traces them, adds their space charge, and repeats until it converges. Output: current, "
+           "throw, waist, trajectories, fields.",
+           "Target dot exe is sir's PIERCE simulator. Its input, pierce dot in, is the electrode "
+           "outline as a list of points with their voltages. It solves the electric field on a grid, "
+           "releases electrons from the cathode, traces them, adds the electrons' own charge to the "
+           "field, and repeats until nothing changes. It reports the current, where the beam "
+           "focuses, and whether electrons hit the metal.", kicker="Background")
+    s.image(text_image(os.path.join(CLONE, "simulation", "lktron", "reference_ceeri", "pierce.in"),
+                       os.path.join(WORK, "refdeck.png"), "sir's deck: pierce.in"),
+            "This is sir's deck for the klystron gun. The top blocks set the grid and the solver. "
+            "The fourteen rows are the electrode points: cathode and focus electrode at zero volts, "
+            "anode and drift tube at one hundred fifty kilovolts. The last block describes the "
+            "cathode.")
+    s.terminal(rec("v5_reference"),
+               "Step one: run sir's own deck through our code. Our driver writes the file, runs target "
+               "dot exe, and reads back the results. One hundred twenty one point seven four amps, "
+               "throw eighty five point five millimetres, waist seven point four three: identical to "
+               "sir's own run.", title="python demo/run_reference.py")
+    log = open(os.path.join(RUNS, "reference", "pierce.log"), encoding="latin-1").read().splitlines()
+    a = next(i for i, l in enumerate(log) if "MAJOR" in l)
+    b = next(i for i, l in enumerate(log) if "Electrode  Potential" in l)
+    excerpt = [l.rstrip()[:118] for l in log[a:b + 5] if l.strip()][:40]
+    s.image(lines_image([("pierce.log, written by target.exe", excerpt, {})],
+                        os.path.join(WORK, "log.png")),
+            "This is what target dot exe writes. Each row is one round of the solution: the current "
+            "starts at three hundred thirty amps and settles at one hundred twenty one point seven "
+            "within twenty rounds. Below it, the beam radius along the axis, the throw, the waist, "
+            "and the current that hits each electrode.")
+    ved = open(os.path.join(REC, "shin_deck.txt"), encoding="latin-1").read().splitlines()
+    ours = open(os.path.join(RUNS, "vedant", "pierce.in"), encoding="latin-1").read().splitlines()
+    vt, ot = ved[-5:], ours[-6:]
+    s.image(lines_image([("Vedant's deck (his writer): end", ved[3:9] + ["..."] + vt +
+                          ["   <- no closing '/' : target.exe stops"],
+                          {len(ved[3:9]) + 1 + len(vt): (239, 112, 112)}),
+                         ("our deck writer: end", ours[3:9] + ["..."] + ot,
+                          {len(ours[3:9]) + len(ot): (78, 201, 160)})],
+                        os.path.join(WORK, "decks.png")),
+            "Step two: Vedant's code writes the same kind of deck, but it did not run. It never closes "
+            "the cathode block with a slash, so target dot exe stops at the end of the file, and its "
+            "solver settings crash the program. Our deck writer adds the slash, uses sir's settings, "
+            "and keeps the grid within the program's limit of five hundred cells.")
+    s.card("The pipeline",
+           "gun specs (V, I, rw, Jc) -> Vedant's exact synthesis -> his electrode construction -> "
+           "our deck writer (fixed) -> target.exe -> our reader (pierce.log, pierce.plt) -> compare "
+           "with the design -> tune the electrode angle and anode -> repeat",
+           "So the pipeline is: gun specifications, Vedant's synthesis and electrode construction, "
+           "our fixed deck writer, target dot exe, our reader of its output files, a comparison with "
+           "the design, and if needed, tuning and running again.", kicker="How it fits together")
+    s.terminal(rec("v3_vedant_run"),
+               f"Step three: one command does all of it for a gun. For Vedant's design, target dot exe "
+               f"finds {cur('vedant'):.1f} amps against the designed one hundred twenty: twenty six "
+               "and a half percent too much.",
+               title="python -m src.sim.deck --V 150000 --I 120 --rw 9.8 --Jc 5 --run")
+    s.frames(trajectory_animation(os.path.join(RUNS, "vedant"), "target.exe output: Vedant's deck",
+                                  [f"current {cur('vedant'):.1f} A (design 120 A)"]),
+             "This is target dot exe's own output, animated: the electrodes, the field lines, then the "
+             "electrons. The current settles well above the design line.", min_dur=9)
+    s.terminal(rec("v3_experiments"),
+               "Step four: every version of the gun, simulated together. Our A N N guns come out plus "
+               "twenty seven and plus twenty two percent, Vedant's plus twenty six and a half, the "
+               "Tiwary Basu electrodes minus fourteen and a half. Whoever supplies the angle, the "
+               "error is in the electrode shape.", title="python -m src.sim.experiments")
+    s.image(montage([("ann_m1", "our code: ANN M1"), ("ann_e", "our code: ANN-E"),
+                     ("vedant", "Vedant's code"), ("vedant_raw", "Vedant, uncorrected cathode"),
+                     ("tiwary_basu", "Tiwary-Basu electrodes"), ("psi_57.5", "electrode at 57.5 deg"),
+                     ("psi_72.5", "electrode at 72.5 deg"), (B, "tuned: angle + anode")],
+                    os.path.join(WORK, "montage5.png")),
+            "Sir's own plotter script on each of these runs.",
+            title="sir's pierce_plotter.py on every run")
+    s.terminal(rec("v3_tune"),
+               "Step five: target dot exe in the loop. The electrode angle and the anode position are "
+               "changed, run, measured, and changed again, until the current and the beam waist match "
+               "the design.", title="python -m src.sim.experiments --tune")
+    s.frames(trajectory_animation(os.path.join(RUNS, B),
+                                  f"target.exe output: tuned gun, {best['psi_deg']:.1f} deg, anode "
+                                  f"+{best['anode_shift_mm']:.2f} mm",
+                                  [f"current {cur(B):.1f} A (design 120 A)",
+                                   f"waist {best['compare']['sim_waist_mm_refined']:.2f} mm "
+                                   "(design 9.8 mm)"]),
+             f"The result: {cur(B):.1f} amps, within one percent of the design, a waist within two "
+             "percent, and no electron hits the gun.", min_dur=9)
+
+    def rotate(p):
+        p.wait_for_timeout(600)
+        p.mouse.move(640, 380)
+        p.mouse.down()
+        p.mouse.move(750, 395, steps=50)
+        p.mouse.up()
+
+    s.browser("file:///" + os.path.join(RUNS, B, "plot_index1_Normalized_Potential.html").replace("\\", "/"), [
+        ("Sir's other script, new 3 D, shows target dot exe's potential over the whole grid: zero "
+         "at the cathode, rising to the anode voltage.", rotate),
+    ])
+    s.browser(URL + "#sim", [
+        ("All the runs are on the website's Simulation tab.", lambda p: highlight(p, "#sim-stats")),
+        ("Each run against the design.", lambda p: highlight(p, "#sim-table")),
+        ("And the trajectories of any run.", lambda p: highlight(p, "#sim-svg")),
+    ])
+    s.card("Summary",
+           "Sir's run reproduced exactly; Vedant's deck fixed so target.exe runs it; one command "
+           "from gun specs to a simulated, compared gun; every gun ~25 % over the design current "
+           "until the electrodes are tuned with target.exe in the loop: then -0.7 % current, "
+           "-1.9 % waist.",
+           "In short: we reproduce sir's own run exactly, we fixed Vedant's deck so target dot exe "
+           "runs it, and one command takes any gun from its specifications to a simulated result. "
+           "Every synthesised gun drew about twenty five percent too much current, until the "
+           "electrodes were tuned with target dot exe in the loop.", kicker="End")
+    return s.render(os.path.join(OUT, "demoB_our_code_on_target_exe.mp4"))
+
+
 if __name__ == "__main__":
     for k in WHICH:
-        print("built", {"1": video1, "2": video2, "3": video3}[k]())
+        print("built", {"1": video1, "2": video2, "3": video3, "4": video4, "5": video5}[k]())
