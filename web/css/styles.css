@@ -481,3 +481,20 @@ footer.site {
 #ds-stats .stat .n { font-size: 1.25rem; }
 button.ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 #ds-deck-note { font-size: 0.78rem; color: var(--ink-3); max-width: 72ch; }
+#ds-elec { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 0.8rem; padding: 4px 8px; max-width: 100%; }
+/* ---------- simulation tab (colours as in sir's pierce_plotter.py) ---------- */
+#sim-svg, #sim-sweep { width: 100%; height: auto; display: block; background: #f7f8fa; border-radius: 6px; }
+.sim-bnd { fill: none; stroke: #000000; stroke-width: 1.8; }
+.sim-traj { fill: none; stroke: #d62728; stroke-width: 0.7; }
+.sim-eq { fill: none; stroke: #2ca02c; stroke-width: 0.6; }
+#sim-sweep { background: transparent; }
+.sim-grid { stroke: var(--line); stroke-width: 1; }
+.sim-curve-c { fill: none; stroke: var(--accent); stroke-width: 2; }
+.sim-curve-w { fill: none; stroke: var(--bad); stroke-width: 2; }
+.sim-dot-c { fill: var(--accent); }
+.sim-dot-w { fill: var(--bad); }
+.sim-target-c { stroke: var(--accent); stroke-dasharray: 5 4; }
+.sim-target-w { stroke: var(--bad); stroke-dasharray: 5 4; }
+.sim-lab-c { fill: var(--accent); font-size: 11px; font-family: var(--sans); }
+.sim-lab-w { fill: var(--bad); font-size: 11px; font-family: var(--sans); }
+#sim-pick { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 0.8rem; padding: 4px 8px; max-width: 100%; }

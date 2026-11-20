@@ -31,6 +31,7 @@
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button role="tab" id="tab-predict" aria-controls="panel-predict" aria-selected="true">Predict</button>
       <button role="tab" id="tab-design" aria-controls="panel-design" aria-selected="false">Design</button>
+      <button role="tab" id="tab-sim" aria-controls="panel-sim" aria-selected="false">Simulation</button>
       <button role="tab" id="tab-dataset" aria-controls="panel-dataset" aria-selected="false">Dataset</button>
       <!-- Results tab hidden for now (too many graphs to explain) — uncomment to restore
       <button role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false">Results</button>
@@ -148,8 +149,23 @@
              aria-label="Gun half cross-section"></svg>
         <figcaption id="ds-caption"></figcaption>
       </figure>
+      <div class="card ds-electrodes" style="margin-top:12px">
+        <div class="control"><div class="control-head">
+          <label for="ds-elec">Focus electrode and anode</label>
+          <select id="ds-elec">
+            <option value="vedant">Vedant: straight, at an angle</option>
+            <option value="tiwary-basu">Tiwary &amp; Basu (1988): equipotential curves</option>
+          </select></div></div>
+        <div class="control" id="ds-psi-wrap"><div class="control-head">
+          <label for="ds-psi">Electrode angle to the beam edge <span class="unit">ψ, deg (Pierce: 67.5)</span></label>
+          <input type="number" id="ds-psi" step="0.5" min="30" max="85" value="67.5"></div></div>
+        <div class="control"><div class="control-head">
+          <label for="ds-shift">Anode shift along the axis <span class="unit">mm</span></label>
+          <input type="number" id="ds-shift" step="0.25" value="0"></div></div>
+      </div>
       <div class="btn-row" style="margin-top:12px">
-        <button class="ghost" type="button" id="ds-deck">Download EGUN deck</button>
+        <button class="ghost" type="button" id="ds-pdeck">Download PIERCE deck (target.exe)</button>
+        <button class="ghost" type="button" id="ds-deck">Vedant's original deck format</button>
       </div>
       <p class="band-note" id="ds-deck-note"></p>
       <div class="card" style="margin-top:20px">
@@ -170,6 +186,65 @@
          aria-label="Pareto front"></svg>
     <figcaption id="ds-pareto-note"></figcaption>
   </figure>
+</section>
+
+<!-- ============================ SIMULATION ========================= -->
+<section role="tabpanel" id="panel-sim" aria-labelledby="tab-sim" hidden>
+  <h2>Simulation in PIERCE</h2>
+  <p class="lede">Every gun on this page was synthesised from equations. Here the electrode
+    decks were run in Dr. Lalit Kumar's PIERCE simulator (<code>target.exe</code>), which
+    solves the field and the space charge self-consistently and traces the electrons. That
+    shows what a synthesised gun actually does. The results below are recorded runs: PIERCE
+    is a Windows program and cannot run inside a web page.</p>
+
+  <div class="stats" id="sim-stats"></div>
+
+  <h3>The runs</h3>
+  <p class="note" id="sim-design"></p>
+  <div class="table-scroll"><table class="plain" id="sim-table"></table></div>
+  <p class="note">"Lost in gun" counts trajectories that hit the focus electrode, anode or
+    aperture before the waist. Trajectories that hit the drift tube after the waist are the
+    expanding beam, which a real device holds with a magnet, so they are not counted against
+    the gun. A waist on the end wall is not reported: the beam is still converging there.</p>
+
+  <h3>Trajectories</h3>
+  <div class="btn-row"><select id="sim-pick" aria-label="Run"></select></div>
+  <figure class="figure">
+    <svg id="sim-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PIERCE trajectories"></svg>
+    <figcaption id="sim-caption"></figcaption>
+  </figure>
+
+  <h3>Focus-electrode angle sweep</h3>
+  <figure class="figure">
+    <svg id="sim-sweep" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Current and waist against electrode angle"></svg>
+    <figcaption>Vedant's construction with the focus electrode at ψ to the beam edge, everything
+      else unchanged. The current rises steadily with ψ; Pierce's 67.5° gives 27 % too much
+      current for this gun. This is the study Gao et al. (AIP Advances 2025) ran in COMSOL,
+      repeated on our gun in sir's code.</figcaption>
+  </figure>
+
+  <h3>What the two papers added</h3>
+  <div class="grid two">
+    <div class="card">
+      <h3 style="margin-top:0">Tiwary &amp; Basu (IEEE TED 1988)</h3>
+      <p class="note">Synthesises the focus electrode and the anode face as the V = 0 and
+        V = V<sub>a</sub> equipotentials of the ideal flow, by a logarithmic conformal map of
+        Langmuir and Blodgett's potential. Vedant's straight 67.5° electrode is the first-order
+        tangent of the paper's curve. Implemented exactly in <code>src/physics/bfe.py</code>
+        (the paper interpolates); it reproduces the paper's Fig. 2, leaves the cathode at 67.50°,
+        and hits the anode sphere exactly. The map satisfies planar, not axisymmetric, Laplace;
+        the dropped terms are not small, and in PIERCE these electrodes give 15 % less current
+        than designed. Choose them in the Design tab.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Gao et al. (AIP Advances 2025)</h3>
+      <p class="note">Sweeps the angle of the focus (Wehnelt) electrode in a field simulation and
+        reads off current and waist. We ran the same study on our gun in PIERCE, then went one
+        step further: the angle (and the anode position) were adjusted automatically, with PIERCE
+        in the loop, until the simulated gun gave the designed current, and then the designed
+        waist as well.</p>
+    </div>
+  </div>
 </section>
 
 <!-- ============================ DATASET ============================ -->
@@ -523,6 +598,9 @@
 <script src="data/design_meta.js"></script>
 <script src="data/pareto.js"></script>
 <script src="js/closure.js"></script>
+<script src="js/pierce.js"></script>
 <script src="js/design.js"></script>
+<script src="data/simulation.js"></script>
+<script src="js/simulation.js"></script>
 </body>
 </html>
