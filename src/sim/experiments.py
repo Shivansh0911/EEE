@@ -137,7 +137,7 @@ def geometry_from_theta(exact, thetaT_deg):
     return r
 
 
-def tiwary_basu_rows(result):
+def tiwary_basu_rows(result, d=None):
     """
     Deck rows for the Tiwary-Basu electrodes on the ideal flow.
 
@@ -152,10 +152,11 @@ def tiwary_basu_rows(result):
     Both curves are cut at their highest point because past it they turn back
     toward the axis (Fig. 2 of the paper), which a real electrode cannot do.
     """
+    D_ = D if d is None else d
     Rc, Ra, rc = result["Rc_mm"], result["Ra_mm"], result["rc_mm"]
     th = math.radians(result["theta"])
     V = result["V"]
-    e = bfe.electrodes(Rc, Ra, result["theta"], d=D, r_max=1e9)
+    e = bfe.electrodes(Rc, Ra, result["theta"], d=D_, r_max=1e9)
     Rmax = 1.75 * rc
     B = e["bfe"]
     B = B[: int(np.argmax(B[:, 1])) + 1]                   # rim -> apex
@@ -167,11 +168,11 @@ def tiwary_basu_rows(result):
         raise ValueError("anode equipotential never clears the aperture radius")
     z_ap = A[0, 0]
     tan_phi2 = 0.17409 * math.sqrt(result["muP"] * abs(math.log(result["R"])))
-    z12 = D + Rc
+    z12 = D_ + Rc
     r12 = ra - (z12 - z_ap) * tan_phi2
-    Zmax = D + TUBE_FACTOR * result["zw_mm"]
-    rows = [{"code": 0, "z": D, "r": 0.0, "volt": 0.0, "zc": D + Rc, "rad": Rc}]
-    rows.append({"code": 1, "z": D + Rc * (1 - math.cos(th)), "r": rc, "volt": 0.0,
+    Zmax = D_ + TUBE_FACTOR * result["zw_mm"]
+    rows = [{"code": 0, "z": D_, "r": 0.0, "volt": 0.0, "zc": D_ + Rc, "rad": Rc}]
+    rows.append({"code": 1, "z": D_ + Rc * (1 - math.cos(th)), "r": rc, "volt": 0.0,
                  "exact_z": True})
     rows += [{"code": 1, "z": z, "r": r, "volt": 0.0} for z, r in B[1:]]
     rows.append({"code": -1, "z": B[-1, 0], "r": Rmax, "volt": 0.0})       # gap to anode
