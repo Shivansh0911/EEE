@@ -75,7 +75,8 @@
       $("ds-measured").textContent = "";
       $("ds-rows").innerHTML = "";
       clearSvg();
-      setDeck({ refused: "design is infeasible: " + r.reason });
+      var no = { refused: "design is infeasible: " + r.reason };
+      setDeck(no, no);
       out.innerHTML = msg("bad", "<strong>No Pierce gun exists for these inputs.</strong> " +
         esc(r.reason) + ". (μP = " + fmt(r.muP, 3) + ", C = " + fmt(r.C, 2) + ")");
       return;
