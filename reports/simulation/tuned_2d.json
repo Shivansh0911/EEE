@@ -1,0 +1,166 @@
+{
+  "method": "Newton on (psi, anode shift), forward-difference Jacobian, PIERCE in the loop; targets design current and design waist; tolerance 0.5 % current, 3 % waist",
+  "converged": false,
+  "best": {
+    "psi_deg": 65.656,
+    "anode_shift_mm": 2.265,
+    "variant": "tune2d_65.656_+2.265",
+    "compare": {
+      "design_current_A": 120.0,
+      "sim_current_A": 119.1417,
+      "current_err_pct": -0.7152500000000006,
+      "design_microperveance": 2.0655911179772892,
+      "sim_microperveance": 2.051,
+      "intercepted_A": 62.8656,
+      "transmission_pct": 47.234511510243685,
+      "design_throw_mm": 77.80673654026418,
+      "sim_throw_mm_pierce": 97.5,
+      "sim_throw_mm_refined": 99.81556891547706,
+      "throw_err_pct": 28.286538356255985,
+      "design_waist_mm": 9.8,
+      "sim_waist_mm_pierce": 9.6211,
+      "sim_waist_mm_refined": 9.613053398018714,
+      "waist_err_pct": -1.9076183875641473,
+      "waist_inside_domain": true,
+      "converged": true,
+      "iterations": 20,
+      "wall_seconds": 38.37070107460022,
+      "n_trajectories": 58,
+      "lost_in_gun": 0,
+      "lost_after_waist": 15,
+      "lost_in_gun_at_mm": []
+    }
+  },
+  "history": [
+    {
+      "psi_deg": 57.084,
+      "dz_mm": 0.0,
+      "current_A": 120.1875,
+      "waist_mm": 6.401591165072983,
+      "throw_mm": 94.9218919505316,
+      "lost_in_gun": 0,
+      "err_I_pct": 0.15624999999999112,
+      "err_w_pct": -34.67764117272467
+    },
+    {
+      "psi_deg": 59.084,
+      "dz_mm": 0.0,
+      "current_A": 125.1513,
+      "waist_mm": 7.094361685687396,
+      "throw_mm": 99.56595103578161,
+      "lost_in_gun": 0,
+      "err_I_pct": 4.292750000000001,
+      "err_w_pct": -27.608554227679637
+    },
+    {
+      "psi_deg": 57.084,
+      "dz_mm": 2.0,
+      "current_A": 100.9872,
+      "waist_mm": 4.929562862027682,
+      "throw_mm": 104.77988291644495,
+      "lost_in_gun": 0,
+      "err_I_pct": -15.844000000000003,
+      "err_w_pct": -49.698338142574684
+    },
+    {
+      "psi_deg": 63.084,
+      "dz_mm": 5.671,
+      "current_A": 88.5017,
+      "waist_mm": 6.027278466538613,
+      "throw_mm": 116.60725839061882,
+      "lost_in_gun": 0,
+      "err_I_pct": -26.24858333333333,
+      "err_w_pct": -38.49715850470804
+    },
+    {
+      "psi_deg": 65.084,
+      "dz_mm": 5.671,
+      "current_A": 91.1931,
+      "waist_mm": 6.98299190846301,
+      "throw_mm": 111.30709045731545,
+      "lost_in_gun": 0,
+      "err_I_pct": -24.005750000000003,
+      "err_w_pct": -28.744980525887666
+    },
+    {
+      "psi_deg": 63.084,
+      "dz_mm": 7.671,
+      "current_A": 77.5871,
+      "waist_mm": 4.64665302848241,
+      "throw_mm": 131.71395193591442,
+      "lost_in_gun": 0,
+      "err_I_pct": -35.34408333333333,
+      "err_w_pct": -52.58517317875092
+    },
+    {
+      "psi_deg": 62.396,
+      "dz_mm": -0.27,
+      "current_A": 136.0382,
+      "waist_mm": 9.498829187764937,
+      "throw_mm": 98.36848436247003,
+      "lost_in_gun": 0,
+      "err_I_pct": 13.36516666666665,
+      "err_w_pct": -3.0731715534190185
+    },
+    {
+      "psi_deg": 64.396,
+      "dz_mm": -0.27,
+      "current_A": 141.7262,
+      "waist_mm": 10.782407778477822,
+      "throw_mm": 93.90095766129035,
+      "lost_in_gun": 0,
+      "err_I_pct": 18.105166666666662,
+      "err_w_pct": 10.024569168141028
+    },
+    {
+      "psi_deg": 62.396,
+      "dz_mm": 1.73,
+      "current_A": 116.0662,
+      "waist_mm": 8.085500203290469,
+      "throw_mm": 103.25690242057502,
+      "lost_in_gun": 0,
+      "err_I_pct": -3.278166666666671,
+      "err_w_pct": -17.49489588479114
+    },
+    {
+      "psi_deg": 65.656,
+      "dz_mm": 2.265,
+      "current_A": 119.1417,
+      "waist_mm": 9.613053398018714,
+      "throw_mm": 99.81556891547706,
+      "lost_in_gun": 0,
+      "err_I_pct": -0.7152500000000006,
+      "err_w_pct": -1.9076183875641473
+    },
+    {
+      "psi_deg": 67.656,
+      "dz_mm": 2.265,
+      "current_A": 125.7334,
+      "waist_mm": 11.251894852767462,
+      "throw_mm": 93.1532652716844,
+      "lost_in_gun": 0,
+      "err_I_pct": 4.777833333333326,
+      "err_w_pct": 14.815253599667976
+    },
+    {
+      "psi_deg": 65.656,
+      "dz_mm": 4.265000000000001,
+      "current_A": 102.9818,
+      "waist_mm": 8.369451982776503,
+      "throw_mm": 104.79875178810381,
+      "lost_in_gun": 0,
+      "err_I_pct": -14.181833333333326,
+      "err_w_pct": -14.597428747178542
+    },
+    {
+      "psi_deg": 65.87,
+      "dz_mm": 2.246,
+      "current_A": 119.1417,
+      "waist_mm": 9.613053398018714,
+      "throw_mm": 99.81556891547706,
+      "lost_in_gun": 0,
+      "err_I_pct": -0.7152500000000006,
+      "err_w_pct": -1.9076183875641473
+    }
+  ]
+}

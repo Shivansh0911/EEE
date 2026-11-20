@@ -1,0 +1,172 @@
+{
+  "name": "reference",
+  "ok": true,
+  "notes": {
+    "source": "sir's reference deck, unchanged"
+  },
+  "cathode_radius_mm": 57.8,
+  "pierce": {
+    "completed": true,
+    "iterations": 20,
+    "potential_error": 1.72e-06,
+    "converged": true,
+    "current_A": 121.7,
+    "microperveance": 2.096,
+    "throw_mm": 85.5,
+    "waist_mm": 7.4336,
+    "cathode_current_A": 121.7416,
+    "beam_current_A": 121.7416,
+    "n_trajectories": 57,
+    "cathode_area_m2": 0.002501,
+    "electrodes": [
+      {
+        "electrode": 1,
+        "potential_V": 0.0,
+        "trajectories_hit": 0,
+        "intercepted_A": 0.0
+      },
+      {
+        "electrode": 2,
+        "potential_V": 150000.0,
+        "trajectories_hit": 0,
+        "intercepted_A": 0.0
+      }
+    ],
+    "intercepted_A": 0.0,
+    "envelope": [
+      [
+        7.5,
+        27.01873
+      ],
+      [
+        13.5,
+        23.43908
+      ],
+      [
+        19.5,
+        19.73001
+      ],
+      [
+        25.5,
+        16.5309
+      ],
+      [
+        31.5,
+        13.87452
+      ],
+      [
+        37.5,
+        11.97797
+      ],
+      [
+        43.5,
+        10.78088
+      ],
+      [
+        49.5,
+        9.87076
+      ],
+      [
+        55.5,
+        9.23593
+      ],
+      [
+        61.5,
+        8.75803
+      ],
+      [
+        67.5,
+        8.32951
+      ],
+      [
+        73.5,
+        7.94903
+      ],
+      [
+        79.5,
+        7.62423
+      ],
+      [
+        85.5,
+        7.4336
+      ],
+      [
+        91.5,
+        7.43413
+      ],
+      [
+        97.5,
+        7.56744
+      ],
+      [
+        103.5,
+        7.84236
+      ],
+      [
+        109.5,
+        8.31096
+      ],
+      [
+        115.5,
+        8.94104
+      ],
+      [
+        121.5,
+        9.72668
+      ],
+      [
+        127.5,
+        10.65168
+      ]
+    ],
+    "wall_seconds": 37.6774160861969,
+    "exit_code": 0
+  },
+  "current_history_A": [
+    331.0,
+    303.4,
+    232.2,
+    172.4,
+    135.8,
+    118.6,
+    113.6,
+    114.4,
+    116.9,
+    119.3,
+    120.9,
+    121.7,
+    121.9,
+    121.9,
+    121.8,
+    121.7,
+    121.7,
+    121.7,
+    121.7,
+    121.7
+  ],
+  "compare": {
+    "design_current_A": 120.0,
+    "sim_current_A": 121.7416,
+    "current_err_pct": 1.4513333333333378,
+    "design_microperveance": 2.0655911179772892,
+    "sim_microperveance": 2.096,
+    "intercepted_A": 0.0,
+    "transmission_pct": 100.0,
+    "design_throw_mm": 77.80673654026418,
+    "sim_throw_mm_pierce": 85.0,
+    "sim_throw_mm_refined": 87.9833647206527,
+    "throw_err_pct": 13.07936643136578,
+    "design_waist_mm": 9.8,
+    "sim_waist_mm_pierce": 7.4336,
+    "sim_waist_mm_refined": 7.4099692652751585,
+    "waist_err_pct": -24.388068721682068,
+    "waist_inside_domain": true,
+    "converged": true,
+    "iterations": 20,
+    "wall_seconds": 37.6774160861969,
+    "n_trajectories": 57,
+    "lost_in_gun": 0,
+    "lost_after_waist": 0,
+    "lost_in_gun_at_mm": []
+  }
+}

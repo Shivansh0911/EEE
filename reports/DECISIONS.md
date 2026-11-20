@@ -427,3 +427,29 @@ study): his `get_design_params_mode1` is run, with his defaults, on each
 candidate. Only his drift-tube clearance integral — which feeds a printout,
 never a refusal — is stubbed during that check; `write_deck` always runs his
 full code.
+
+## D13 — Sir's PIERCE simulator is the judge of a synthesised gun
+
+**Decision.** Every gun the synthesis produces can be written as a deck for
+Dr. Lalit Kumar's PIERCE (`target.exe`) and simulated (`src/sim`). Where the
+simulation and the synthesis disagree, the simulation is taken as the better
+estimate of the gun, and the synthesis is corrected by tuning, with PIERCE in
+the loop, rather than the other way round. Reason: the synthesis is Vaughan's
+idealised flow; PIERCE solves the actual field and space charge. Measured: Vedant's
+deck draws 26.5 % more than its design current in PIERCE; tuning the focus
+electrode angle brings it to +0.2 %, and tuning the angle and anode position
+together reaches −0.7 % current and −1.9 % waist (`reports/SIMULATION.md`).
+
+**What is not changed.** Vedant's code is still untouched. The three deck fixes
+(closing `/`, sir's control values, the 500-interval grid limit) live in our
+deck writer, and his own writer's omission is recorded by a test.
+
+## D14 — Tiwary–Basu electrodes are offered, not adopted
+
+The focus electrode and anode of Tiwary & Basu (1988) are implemented exactly
+and validated against the paper (`src/physics/bfe.py`). They are an option in
+the Design tab, not the default, because the planar conformal map drops
+axisymmetric terms that are not small, and in PIERCE they miss the design current
+by −14.5 %, no closer than Vedant's straight line (+26.5 %) once either is tuned.
+Vedant's construction stays the default because its single angle is a clean knob
+for simulation-in-the-loop tuning.

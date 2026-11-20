@@ -1,0 +1,178 @@
+{
+  "name": "tuned_psi_62.500",
+  "ok": true,
+  "notes": {
+    "psi_deg": 62.50000000000001,
+    "cathode": "RcT (corrected)",
+    "angle_to_axis_deg": 30.340733182255725
+  },
+  "cathode_radius_mm": 51.92720841995927,
+  "pierce": {
+    "completed": true,
+    "iterations": 20,
+    "potential_error": 6.44e-07,
+    "converged": true,
+    "current_A": 136.0,
+    "microperveance": 2.342,
+    "throw_mm": 99.0,
+    "waist_mm": 9.49886,
+    "cathode_current_A": 136.0382,
+    "beam_current_A": 36.8041,
+    "n_trajectories": 58,
+    "cathode_area_m2": 0.002574,
+    "electrodes": [
+      {
+        "electrode": 1,
+        "potential_V": 0.0,
+        "trajectories_hit": 0,
+        "intercepted_A": 0.0
+      },
+      {
+        "electrode": 2,
+        "potential_V": 150000.0,
+        "trajectories_hit": 26,
+        "intercepted_A": 99.2341
+      }
+    ],
+    "intercepted_A": 99.2341,
+    "envelope": [
+      [
+        8.0,
+        27.48437
+      ],
+      [
+        15.0,
+        23.43277
+      ],
+      [
+        22.0,
+        19.85757
+      ],
+      [
+        29.0,
+        16.78876
+      ],
+      [
+        36.0,
+        14.43103
+      ],
+      [
+        43.0,
+        13.11232
+      ],
+      [
+        50.0,
+        12.2396
+      ],
+      [
+        57.0,
+        11.55414
+      ],
+      [
+        64.0,
+        10.98532
+      ],
+      [
+        71.0,
+        10.50565
+      ],
+      [
+        78.0,
+        10.10859
+      ],
+      [
+        85.0,
+        9.79613
+      ],
+      [
+        92.0,
+        9.58287
+      ],
+      [
+        99.0,
+        9.49886
+      ],
+      [
+        106.0,
+        9.58943
+      ],
+      [
+        113.0,
+        9.91111
+      ],
+      [
+        120.0,
+        10.51166
+      ],
+      [
+        127.0,
+        11.4015
+      ],
+      [
+        134.0,
+        12.59734
+      ],
+      [
+        141.0,
+        12.95512
+      ],
+      [
+        148.0,
+        12.79782
+      ],
+      [
+        155.0,
+        12.74471
+      ]
+    ],
+    "wall_seconds": 58.72649025917053,
+    "exit_code": 0
+  },
+  "current_history_A": [
+    366.8,
+    336.5,
+    259.7,
+    194.5,
+    154.3,
+    135.0,
+    128.8,
+    129.1,
+    131.5,
+    133.9,
+    135.4,
+    136.2,
+    136.4,
+    136.4,
+    136.3,
+    136.1,
+    136.1,
+    136.0,
+    136.0,
+    136.0
+  ],
+  "compare": {
+    "design_current_A": 120.0,
+    "sim_current_A": 136.0382,
+    "current_err_pct": 13.36516666666665,
+    "design_microperveance": 2.0655911179772892,
+    "sim_microperveance": 2.342,
+    "intercepted_A": 99.2341,
+    "transmission_pct": 27.054239176937067,
+    "design_throw_mm": 77.80673654026418,
+    "sim_throw_mm_pierce": 98.5,
+    "sim_throw_mm_refined": 98.36848436247003,
+    "throw_err_pct": 26.426693544157786,
+    "design_waist_mm": 9.8,
+    "sim_waist_mm_pierce": 9.49886,
+    "sim_waist_mm_refined": 9.498829187764937,
+    "waist_err_pct": -3.0731715534190185,
+    "waist_inside_domain": true,
+    "converged": true,
+    "iterations": 20,
+    "wall_seconds": 58.72649025917053,
+    "n_trajectories": 58,
+    "lost_in_gun": 0,
+    "lost_after_waist": 26,
+    "lost_in_gun_at_mm": []
+  }
+}
