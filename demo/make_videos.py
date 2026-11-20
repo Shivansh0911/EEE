@@ -81,7 +81,7 @@ def montage(items, out):
     tiles = []
     for name, label in items:
         p = os.path.join(RUNS, name, "pierce_plot_plot1.png")
-        t = Image.open(crop_plot(p, os.path.join(WORK, f"crop_{name}.png")))
+        t = Image.open(crop_plot(p, os.path.join(WORK, f"crop_{name.replace('/', '_')}.png")))
         t = t.crop((0, 0, int(t.width * 0.72), t.height))     # drop the legend box
         t.thumbnail((610, 210))
         tile = Image.new("RGB", (620, 250), (255, 255, 255))
@@ -611,6 +611,133 @@ def video5():
     return s.render(os.path.join(OUT, "demoB_our_code_on_target_exe.mp4"))
 
 
+# =============================================================================
+def video6():
+    s = Scenes(WORK, "v6")
+    s.card("Our website: the Pierce gun, and the beam-focusing electrode by Tiwary & Basu",
+           "The Predict tab keeps the gun it always drew, and adds the beam-focusing electrode and "
+           "its angle from Tiwary and Basu (1988).",
+           "This demo shows our website. The Predict tab keeps the Pierce gun it always drew, and now "
+           "also calculates the beam focusing electrode and its angle by Tiwary and Basu's method.",
+           kicker="Demo: website")
+
+    def gun1(p):
+        slow_fill(p, "#in-P", "2", 40)
+        slow_fill(p, "#in-rw", "1.5", 40)
+        slow_fill(p, "#in-C", "40", 40)
+        highlight(p, ".readout")
+
+    def gun2(p):
+        slow_fill(p, "#in-P", "0.3", 40)
+        slow_fill(p, "#in-rw", "0.62", 40)
+        slow_fill(p, "#in-C", "207.6", 40)
+        highlight(p, "#bfe-card")
+
+    s.browser(URL + "#predict", [
+        ("The inputs are perveance, beam waist radius and convergence ratio. For perveance two, "
+         "waist one point five millimetres and convergence forty, our network predicts a half beam "
+         "cone angle of forty point nine degrees.", gun1),
+        ("Our Pierce gun drawing, as before: the cathode, the anode and the beam converging to its "
+         "waist, with the geometry that follows from the angle.", lambda p: highlight(p, "#gun-svg")),
+        ("The geometry table: cathode radius, radius of curvature, anode position and spacing.",
+         lambda p: highlight(p, "#geom-rows")),
+        ("The new card adds the beam focusing electrode, from Tiwary and Basu's paper. It is the "
+         "zero volt equipotential of the ideal electron flow, drawn for this gun.",
+         lambda p: highlight(p, "#bfe-svg")),
+        ("The electrode leaves the cathode at sixty seven point five degrees to the beam edge. For "
+         "this gun that is twenty six point six degrees to the axis. The table also gives where the "
+         "electrode ends and the anode face.", lambda p: highlight(p, "#bfe-rows")),
+        ("Change the inputs, and both the gun and the focusing electrode update. Here a high "
+         "convergence gun gives twenty eight point four degrees, so the electrode is at thirty nine "
+         "point one degrees to the axis.", gun2),
+    ])
+    s.terminal(rec("v1_paper1"),
+               "The paper's method is checked on the paper's own three guns: the electrode leaves the "
+               "cathode at sixty seven point five degrees, and our anode curve hits the anode sphere "
+               "exactly.", title="python demo/paper1_check.py")
+    s.image(os.path.join(REC, "paper1_overlay.png"),
+            "And our curves, in red, drawn over the paper's own figure two.",
+            title="Tiwary & Basu (1988) Fig. 2, with our curves in red")
+    s.card("Summary", "Same Pierce gun as before, plus the beam-focusing electrode and its angle "
+           "from Tiwary & Basu, computed in the browser from the input parameters.",
+           "So the website keeps our Pierce gun, and adds the beam focusing electrode and its angle "
+           "from Tiwary and Basu, computed from the input parameters.", kicker="End")
+    return s.render(os.path.join(OUT, "demoC_website_gun_and_tiwary_basu.mp4"))
+
+
+def video7():
+    from anim import trajectory_animation
+    from src.sim import lktron as lk
+    og = os.path.join(CLONE, "simulation", "runs", "ourgun")
+    summ = json.load(open(os.path.join(CLONE, "reports", "simulation", "ourgun", "summary.json")))
+    tv = {t["case"]: t["variant"] for t in summ["tuned"]}
+
+    def cur(n):
+        return lk.parse_log(os.path.join(og, n, "pierce.log"))
+
+    s = Scenes(WORK, "v7")
+    s.card("Our gun, simulated in sir's PIERCE (target.exe)",
+           "Our network's angle + the gun synthesised by Vaughan's equations + Tiwary & Basu's "
+           "focus electrode, written as a pierce.in deck and run in target.exe.",
+           "This demo runs our gun in sir's simulator, target dot exe. Our gun is our network's "
+           "angle, the gun built around it by Vaughan's equations, and Tiwary and Basu's beam "
+           "focusing electrode.", kicker="Demo: our gun in target.exe")
+    s.card("What target.exe does",
+           "Reads pierce.in (electrode points and voltages); solves the electric field on a grid; "
+           "emits electrons from the cathode; traces them; adds their space charge; repeats until "
+           "it converges. Reports the current, the beam waist and lost electrons.",
+           "Target dot exe reads the electrode outline, solves the electric field, emits and traces "
+           "the electrons, adds their own charge, and repeats until it converges. It tells us the "
+           "current the gun really draws, where the beam focuses, and whether electrons hit the "
+           "metal.", kicker="Background")
+    s.terminal(rec("v5_reference"),
+               "First, a check: sir's own deck run through our code reproduces his result exactly, "
+               "one hundred twenty one point seven four amps.", title="python demo/run_reference.py")
+    s.terminal(rec("v7_ourgun"),
+               "Now our gun, on sir's klystron gun and on the paper's seven held out real guns. On "
+               "sir's gun, our gun draws three percent more than designed. On the paper's guns it "
+               "draws eight to fifty six percent more, and two low convergence guns fail. Then the "
+               "anode position is tuned with target dot exe in the loop, and five guns match the "
+               "design within about one percent.", title="python -m src.sim.ourgun --tune")
+    sg = cur("sir_gun")
+    s.frames(trajectory_animation(os.path.join(og, "sir_gun"),
+                                  "target.exe: our gun on sir's klystron gun",
+                                  [f"current {sg['cathode_current_A']:.1f} A (design 120 A)",
+                                   "focus electrode: Tiwary & Basu curve"]),
+             f"Target dot exe's output for our gun on sir's klystron gun: {sg['cathode_current_A']:.1f} "
+             "amps against one hundred twenty designed, and no electron hits the gun.", min_dur=9)
+    c15 = cur("case15")
+    s.frames(trajectory_animation(os.path.join(og, "case15"), "target.exe: our gun, paper case 15",
+                                  [f"current {c15['cathode_current_A']*1000:.1f} mA, design "
+                                   f"{1.01e-6 * 1e4 ** 1.5 * 1000:.1f} mA"]),
+             "A smaller gun from the paper, case fifteen: twenty six percent more current than "
+             "designed.", min_dur=7)
+    t15 = cur(tv["case15"])
+    s.frames(trajectory_animation(os.path.join(og, tv["case15"]),
+                                  "target.exe: case 15 after tuning the anode (+1.10 mm)",
+                                  [f"current {t15['cathode_current_A']*1000:.1f} mA, design "
+                                   f"{1.01e-6 * 1e4 ** 1.5 * 1000:.1f} mA"]),
+             "After moving the anode one point one millimetres, with target dot exe in the loop: the "
+             "current matches the design within zero point two percent.", min_dur=8)
+    s.image(montage([("ourgun/sir_gun", "our gun: sir's klystron gun"),
+                     ("ourgun/case15", "our gun: case 15"),
+                     ("ourgun/case26", "our gun: case 26 (fails)")],
+                    os.path.join(WORK, "montage7.png")),
+            "Sir's plotter on our runs. Case twenty six, a low convergence gun, fails: the beam hits "
+            "the gun, so this construction does not suit such guns.",
+            title="sir's pierce_plotter.py on our gun")
+    s.card("Summary",
+           "Our gun runs in target.exe; untuned it draws 3 % to 56 % more current than designed; "
+           "with the anode tuned by target.exe in the loop, 5 guns match the design perveance within "
+           "1.3 % with no electron lost. Low-convergence guns fail; the simulated waist is smaller "
+           "than designed.",
+           "In short: our gun runs in sir's simulator. Untuned, it draws more current than designed; "
+           "with the anode tuned by the simulator in the loop, five guns match the design within "
+           "about one percent, with no electron lost. Low convergence guns fail, and the simulated "
+           "waist is smaller than designed, which is the next thing to improve.", kicker="End")
+    return s.render(os.path.join(OUT, "demoD_our_gun_in_target_exe.mp4"))
+
+
 if __name__ == "__main__":
     for k in WHICH:
-        print("built", {"1": video1, "2": video2, "3": video3, "4": video4, "5": video5}[k]())
+        print("built", {"1": video1, "2": video2, "3": video3, "4": video4, "5": video5, "6": video6, "7": video7}[k]())
