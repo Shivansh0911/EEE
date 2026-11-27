@@ -999,6 +999,81 @@ def video9():
     return s.render(os.path.join(OUT, "demoD1_our_gun_target_exe_sweeps.mp4"))
 
 
+# =============================================================================
+def log_table_image(log, out, title):
+    """pierce.log's iteration table, with the last major iteration boxed and its CURRENT and
+    MICROPERV. values marked."""
+    from src.sim.compare_log import last_major_iteration
+    it = last_major_iteration(log)
+    lines = it["table"]
+    img = Image.new("RGB", (1240, 70 + 24 * len(lines) + 70), (12, 13, 17))
+    d = ImageDraw.Draw(img)
+    d.text((16, 10), title, font=F(SANS_B, 22), fill=INK)
+    f = F(MONO, 18)
+    cw = d.textlength("0", font=f)
+    for i, ln in enumerate(lines):
+        y = 50 + 24 * i
+        last = i == len(lines) - 1
+        if last:
+            d.rectangle([10, y - 3, 1230, y + 22], outline=(255, 196, 0), width=3)
+        d.text((16, y), ln[:110], font=f, fill=(255, 220, 120) if last else (200, 210, 225))
+    hdr = lines[0]
+    y = 50 + 24 * len(lines) + 8
+    for key, txt in (("CURRENT (A)", "current"), ("MICROPERV.", "microperveance")):
+        x = 16 + hdr.index(key) * cw
+        d.text((x, y), "^ " + txt, font=F(SANS_B, 18), fill=(255, 196, 0))
+    d.text((16, y + 28), f"last major iteration {it['iteration']}:  current {it['current_A']:g} A,  "
+           f"microperveance {it['microperveance']:g}", font=F(SANS_B, 20), fill=(255, 220, 120))
+    img.save(out)
+    return out
+
+
+def video10():
+    """E: predicted current / perveance vs pierce.log, last major iteration (sir's task)."""
+    s = Scenes(WORK, "v10")
+    s.card("Predicted current and perveance vs target.exe",
+           "Sir's task: compare the predicted current / perveance with target.exe's value in "
+           "pierce.log, at the last major iteration.",
+           "Sir's task: compare the current and perveance our code predicts with the value target "
+           "dot exe reports in pierce dot log, at the last major iteration.", kicker="Demo E")
+    s.card("Where the value is",
+           "pierce.log has a table of PIERCE's major iterations: CURRENT (A) and MICROPERV. for each. "
+           "The last row is the converged answer. Predicted: perveance = the design P our gun is "
+           "built for; current = P x 1e-6 x V^1.5.",
+           "Target dot exe iterates the field and the space charge. pierce dot log prints a row for "
+           "every major iteration, with the current and the micro perveance. The last row is its "
+           "final answer. Our prediction is the design perveance our gun was built for, and the "
+           "current that follows from it.", kicker="Method")
+    s.image(log_table_image(os.path.join(CLONE, "reports", "simulation", "ourgun", "sir_gun", "pierce.log"),
+                            os.path.join(WORK, "logtable_sir_gun.png"),
+                            "pierce.log of our gun on sir's klystron gun (150 kV): iteration table"),
+            "Here is pierce dot log for our gun on sir's klystron gun. The current starts at three "
+            "hundred thirty three amps and settles. The last major iteration, number twenty, gives "
+            "one hundred twenty three point six amps and micro perveance two point one two eight, "
+            "against the predicted one hundred twenty amps and two point zero six six.",
+            title="pierce.log: last major iteration")
+    s.terminal(rec("v10_compare"),
+               "The script reads that last row from every run's pierce dot log, and compares. Sir's "
+               "own deck gives plus one point five percent. Our gun as built gives plus three "
+               "percent on sir's gun and eight to fifty six percent on the paper's guns; two low "
+               "convergence guns did not converge. After tuning the anode with target dot exe in the "
+               "loop, the five tuned guns are within one point three percent of the prediction.",
+               title="python -m src.sim.compare_log --show sir_gun")
+    s.image(os.path.join(CLONE, "reports", "figures", "compare_log.png"),
+            "The same comparison as a chart: the perveance error for each gun, as built in blue, "
+            "and with the anode tuned in orange.",
+            title="Perveance: pierce.log vs predicted")
+    s.card("Result",
+           "pierce.log (last major iteration) vs predicted: sir's deck +1.5 %; our gun as built +3 % "
+           "(sir's gun) to +56 %; two low-convergence guns fail. Anode tuned with target.exe in the "
+           "loop: sir's gun -1.3 %, case 6 +0.1 %, case 12 -0.4 %, case 15 +0.2 %, case 17 +0.7 %. "
+           "Table: reports/simulation/compare_log.md.",
+           "So target dot exe's current and perveance, at the last major iteration, match our "
+           "prediction within one point three percent once the anode is tuned. The full table is "
+           "in reports, simulation, compare log dot m d.", kicker="End")
+    return s.render(os.path.join(OUT, "demoE_predicted_vs_pierce_log.mp4"))
+
+
 if __name__ == "__main__":
     for k in WHICH:
-        print("built", {"1": video1, "2": video2, "3": video3, "4": video4, "5": video5, "6": video6, "7": video7, "8": video8, "9": video9}[k]())
+        print("built", {"1": video1, "2": video2, "3": video3, "4": video4, "5": video5, "6": video6, "7": video7, "8": video8, "9": video9, "10": video10}[k]())
