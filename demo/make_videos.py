@@ -755,6 +755,12 @@ def _scroll(sel):
     return act
 
 
+def _only_new_sim(p):
+    """Show only the new sections of the Simulation tab (the older studies below are not
+    part of these demos)."""
+    p.add_style_tag(content="#live-card ~ * { display: none !important; }")
+
+
 def _sweep_steps(name, key):
     """(run_dir, label, focus, aim, info line) for every ok row of one sweep."""
     data = json.load(open(os.path.join(CLONE, "reports", "simulation", "sweeps", f"{name}.json")))
@@ -839,14 +845,14 @@ def video8():
          "point.", _scroll("#sw-chart1")),
         ("Now the cathode's radius of curvature, on a smaller gun from the paper. A flatter cathode "
          "focuses further away, and at the ends electrons hit the gun, shown in orange.", rc_mode),
-    ])
+    ], setup=_only_new_sim)
     s.browser(URL + "#dataset", [
         ("The Dataset tab: the real guns from the paper's table two, which the network is trained "
          "and tested on.", None),
     ])
-    s.browser(URL + "#results", [
-        ("The Results tab: the benchmark against the paper, and the error on every held out gun. "
-         "The result is a distribution over training runs, not a single number.", None),
+    s.browser(URL + "#method", [
+        ("The Method tab explains the network, its training by Levenberg Marquardt, and the "
+         "physics behind the synthesis.", None),
     ])
     s.card("Summary",
            "Network angle -> Pierce gun -> Tiwary & Basu focus electrode, in the browser; every gun "
@@ -977,7 +983,7 @@ def video9():
             ("Done in seconds. The trajectories, the focus and the perveance, within half a percent "
              "of the design. All of target dot exe's files are kept, for sir's own plotters.",
              lambda p: p.wait_for_timeout(500)),
-        ])
+        ], setup=_only_new_sim)
     finally:
         srv.terminate()
     s.card("Summary",
