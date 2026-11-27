@@ -1,0 +1,71 @@
+{
+  "name": "theta_-2",
+  "ok": true,
+  "info": {
+    "P": 1.01,
+    "rw_mm": 2.0,
+    "C": 25.0,
+    "V": 10000.0,
+    "I": 1.0099999999999998,
+    "theta_net_deg": 28.07628155056494,
+    "thetaT_built_deg": 28.07628155056494,
+    "theta_raw_deg": 25.20987525979582,
+    "electrode_angle_to_edge_deg": 67.5,
+    "electrode_angle_to_axis_deg": 39.42371844943506,
+    "electrode_tip_mm": [
+      11.546470222133282,
+      13.579162856646372
+    ],
+    "grid_mm": 0.2,
+    "design_throw_mm": 39.36177795261517,
+    "anode_shift_mm": 0.0,
+    "Rc_mm": 23.47774760399786,
+    "RcT_mm": 21.247361581618065,
+    "rc_mm": 10.0,
+    "Ra_mm": 9.726727044167646,
+    "cathode_anode_mm": 13.751020559830213
+  },
+  "compare": {
+    "design_microperveance": 1.01,
+    "sim_microperveance": 1.228,
+    "perveance_err_pct": 21.584158415841582,
+    "design_current_A": 1.0099999999999998,
+    "sim_current_A": 1.2282,
+    "design_waist_mm": 2.0,
+    "sim_waist_mm": 0.5643392333036985,
+    "waist_err_pct": -71.78303833481507,
+    "design_throw_mm": 39.36177795261517,
+    "sim_throw_mm": 40.17965049772443,
+    "waist_inside_domain": true,
+    "converged": true,
+    "wall_seconds": 29.90796208381653,
+    "n_trajectories": 52,
+    "lost_in_gun": 1,
+    "lost_after_waist": 45,
+    "lost_in_gun_at_mm": [
+      2.6
+    ]
+  },
+  "current_history_A": [
+    2.329,
+    2.752,
+    2.429,
+    1.942,
+    1.555,
+    1.32,
+    1.209,
+    1.175,
+    1.179,
+    1.195,
+    1.211,
+    1.221,
+    1.227,
+    1.229,
+    1.229,
+    1.229,
+    1.228,
+    1.228,
+    1.228,
+    1.228
+  ]
+}

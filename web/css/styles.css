@@ -498,3 +498,25 @@ button.ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 .sim-lab-c { fill: var(--accent); font-size: 11px; font-family: var(--sans); }
 .sim-lab-w { fill: var(--bad); font-size: 11px; font-family: var(--sans); }
 #sim-pick { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 0.8rem; padding: 4px 8px; max-width: 100%; }
+
+/* ---------- our gun in target.exe: sweeps and the local live run ---------- */
+#sw-svg, #lv-svg { width: 100%; height: auto; display: block; background: #f7f8fa; border-radius: 6px; }
+#sw-chart1, #sw-chart2 { width: 100%; height: auto; display: block; }
+#sw-gun { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 0.8rem; padding: 4px 8px; }
+button.ghost[aria-pressed="true"] { color: var(--ink); border-color: var(--accent); background: var(--accent-dim); }
+.sw-slider { display: flex; align-items: center; gap: 12px; margin: 12px 0; flex-wrap: wrap; }
+.sw-slider input { flex: 1 1 240px; }
+#sw-step-label { font-family: var(--mono); font-size: 0.85rem; color: var(--ink); min-width: 16ch; }
+.sw-hit { fill: none; stroke: #ff7f0e; stroke-width: 2.5; }
+.sw-aim { stroke: #1f77b4; stroke-width: 1.4; stroke-dasharray: 5 4; }
+.sw-focus { stroke: #9467bd; stroke-width: 1.4; }
+.sw-tag { font-size: 11px; font-family: var(--sans); }
+.sw-line { fill: none; stroke: var(--accent); stroke-width: 2; }
+.sw-pred { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.sw-pred2 { fill: none; stroke: #d9822b; stroke-width: 1.5; stroke-dasharray: 2 3; }
+.sw-dot { fill: var(--accent); }
+.sw-now { fill: none; stroke: var(--ink); stroke-width: 2; }
+.sw-target { stroke: var(--ink-3); stroke-width: 1; }
+.live-inputs label { display: flex; flex-direction: column; font-size: 0.72rem; color: var(--ink-3); gap: 2px; }
+.live-inputs input { width: 8.5em; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: 0.85rem; padding: 4px 6px; }
+.live-inputs button { align-self: flex-end; }

@@ -1,2 +1,3 @@
 # PIERCE decks are read by sir's Fortran program: keep them byte-exact.
 *.in -text
+*.bat text eol=crlf

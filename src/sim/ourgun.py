@@ -90,18 +90,20 @@ def build(P, rw, C, V=V_DEFAULT, theta=None, anode_shift=0.0):
             "thetaT_built_deg": r["thetaT"], "theta_raw_deg": r["theta"],
             "electrode_angle_to_edge_deg": 67.5, "electrode_angle_to_axis_deg": 67.5 - r["thetaT"],
             "electrode_tip_mm": [float(tip[0]), float(tip[1])], "grid_mm": h,
-            "design_throw_mm": r["zw_mm"], "anode_shift_mm": anode_shift}
+            "design_throw_mm": r["zw_mm"], "anode_shift_mm": anode_shift,
+            "Rc_mm": r["Rc_mm"], "RcT_mm": r["RcT_mm"], "rc_mm": r["rc_mm"], "Ra_mm": r["Ra_mm"],
+            "cathode_anode_mm": r["zac_mm"] + anode_shift}
     title = f"OUR GUN P{P:g} RW{rw:g} C{C:g}"
     return lk.deck_text(rows, title=title, h=h, d=h, crad=meta["Rc_mm"], rc=r["rc_mm"]), h, info
 
 
-def simulate(name, P, rw, C, V=V_DEFAULT, anode_shift=0.0):
+def simulate(name, P, rw, C, V=V_DEFAULT, anode_shift=0.0, theta=None, runs=None, out=None):
     try:
         with _BUILD:
-            text, h, info = build(P, rw, C, V, anode_shift=anode_shift)
+            text, h, info = build(P, rw, C, V, theta=theta, anode_shift=anode_shift)
     except (ValueError, va.DeckRefused) as e:
         return {"name": name, "ok": False, "error": f"no deck: {e}"}
-    work = os.path.join(RUNS, name)
+    work = os.path.join(runs or RUNS, name)
     try:
         sim = lk.run(text, work)
     except lk.SimulationFailed as e:
@@ -118,7 +120,7 @@ def simulate(name, P, rw, C, V=V_DEFAULT, anode_shift=0.0):
     c.update(ex.trajectory_losses(work, c["sim_throw_mm"]))
     res = {"name": name, "ok": True, "info": info, "compare": c,
            "current_history_A": sim.get("current_history_A")}
-    dest = os.path.join(OUT, name)
+    dest = os.path.join(out or OUT, name)
     lk.copy_outputs(work, dest, names=("pierce.in", "pierce.log", "stdout.txt"))
     with open(os.path.join(dest, "summary.json"), "w", encoding="utf-8") as f:
         json.dump(res, f, indent=2, default=float)

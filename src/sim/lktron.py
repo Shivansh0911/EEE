@@ -34,7 +34,9 @@ import time
 
 from ..ann import dataset as ds
 
-EXE = os.path.join(ds.repo_root(), "simulation", "lktron", "target.exe")
+# Where target.exe is: PIERCE_EXE overrides (serve_local.py sets it when sir's copy
+# is elsewhere), otherwise simulation/lktron/target.exe.
+EXE = os.environ.get("PIERCE_EXE") or os.path.join(ds.repo_root(), "simulation", "lktron", "target.exe")
 REFERENCE_DECK = os.path.join(ds.repo_root(), "simulation", "lktron", "reference_ceeri",
                               "pierce.in")
 

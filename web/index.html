@@ -209,6 +209,51 @@
     shows what a synthesised gun actually does. The results below are recorded runs: PIERCE
     is a Windows program and cannot run inside a web page.</p>
 
+  <h3>Our gun in target.exe: move the anode, change the cathode</h3>
+  <p class="note">Our gun = our network's angle, the gun synthesised around it (Vaughan 1981) and
+    the Tiwary &amp; Basu (1988) focus electrode. Each slider position is a separate target.exe
+    run. <b>Anode shift</b> moves the anode along the axis, so the cathode–anode spacing d
+    changes (compare 1/d² and Langmuir–Blodgett). <b>Cathode R<sub>c</sub></b> changes the
+    cathode's radius of curvature at the same cathode disc and perveance; the anode is re-placed
+    by the Langmuir–Blodgett equation. Watch where the beam focuses and whether it hits the gun.</p>
+  <div class="btn-row">
+    <select id="sw-gun" aria-label="Gun"></select>
+    <button class="ghost" id="sw-mode-anode" aria-pressed="true">Anode shift</button>
+    <button class="ghost" id="sw-mode-rc" aria-pressed="false">Cathode R<sub>c</sub></button>
+  </div>
+  <div class="sw-slider"><input type="range" id="sw-step" min="0" max="0" step="1" aria-label="Sweep step">
+    <span id="sw-step-label"></span></div>
+  <div class="stats" id="sw-stats"></div>
+  <figure class="figure">
+    <svg id="sw-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="target.exe trajectories for this step"></svg>
+    <figcaption id="sw-caption"></figcaption>
+  </figure>
+  <div class="grid two">
+    <figure class="figure"><svg id="sw-chart1" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sweep: current"></svg>
+      <figcaption id="sw-chart1-cap"></figcaption></figure>
+    <figure class="figure"><svg id="sw-chart2" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sweep: focus"></svg>
+      <figcaption id="sw-chart2-cap"></figcaption></figure>
+  </div>
+
+  <div class="card" id="live-card" hidden>
+    <h3>Run our gun in target.exe now (local)</h3>
+    <p class="note">This page is being served by <code>START_HERE.bat</code> on this computer, so
+      it can run <code>target.exe</code> directly. Enter a gun and press Run.</p>
+    <div class="btn-row live-inputs">
+      <label>P (µperv) <input id="lv-P" type="number" step="any" value="2.0656"></label>
+      <label>r<sub>w</sub> (mm) <input id="lv-rw" type="number" step="any" value="9.8"></label>
+      <label>C <input id="lv-C" type="number" step="any" value="7.9544"></label>
+      <label>V (kV) <input id="lv-V" type="number" step="any" value="150"></label>
+      <label>anode shift (mm) <input id="lv-dz" type="number" step="any" value="0"></label>
+      <label>angle change (°) <input id="lv-dth" type="number" step="any" value="0"></label>
+      <button class="ghost" id="lv-run">Run in target.exe</button>
+    </div>
+    <p class="note" id="lv-status"></p>
+    <figure class="figure"><svg id="lv-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Live target.exe run"></svg>
+      <figcaption id="lv-caption"></figcaption></figure>
+  </div>
+
+  <h3>Earlier simulation studies</h3>
   <div class="stats" id="sim-stats"></div>
 
   <h3>The runs</h3>
@@ -615,5 +660,7 @@
 <script src="js/design.js"></script>
 <script src="data/simulation.js"></script>
 <script src="js/simulation.js"></script>
+<script src="data/sweeps.js"></script>
+<script src="js/sweeps.js"></script>
 </body>
 </html>
