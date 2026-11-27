@@ -44,6 +44,22 @@ Every headline number, with its source file and what it does **not** claim:
 
 ---
 
+## Simulation in sir's PIERCE, and the focus-electrode papers
+
+Any synthesised gun can be written as a deck for Dr. Lalit Kumar's PIERCE simulator
+(`simulation/lktron/target.exe`, sir's binary, kept out of git), run, and compared
+with its design. Vedant's deck as synthesised draws 26.5 % too much current in PIERCE.
+Tuning the focus-electrode angle with PIERCE in the loop brings it to +0.2 %; tuning
+the angle and anode position reaches −0.7 % current and −1.9 % waist. Tiwary & Basu's
+(1988) equipotential electrodes are implemented and offered in the Design tab. Full
+account: **`reports/SIMULATION.md`**; numbers: `reports/SIMULATION_RESULTS.md`.
+
+```bash
+python -m src.sim.deck --V 150000 --I 120 --rw 9.8 --Jc 5 --run
+```
+
+---
+
 ## What this is
 
 A Pierce gun is synthesised from three numbers a designer actually cares about:

@@ -263,6 +263,25 @@
              '<span class="v">' + esc(r[1]) + "</span></div>";
     }).join("");
 
+    /* ---- beam-focusing electrode: Tiwary & Basu (1988), an added feature ---- */
+    var tb = null;
+    try { tb = window.EGUN.pierce.tbFromInputs(state.P, state.rw, state.C, theta); }
+    catch (e) { tb = null; }
+    window.EGUN.tbgun.render($("bfe-svg"), tb, theta);
+    $("bfe-caption").textContent = "Upper half of the gun, to scale. Cathode r_c = √C·r_w, " +
+      "R_c = r_c / sin θ; anode sphere R_a from Langmuir–Blodgett, P = 14.665 (1 − cos θ)/α².";
+    var brows = tb ? [
+      ["Focus electrode angle to the beam edge", fmt(tb.angleToEdge, 1) + "°", "Tiwary & Basu, at the cathode rim"],
+      ["Focus electrode angle to the axis", fmt(tb.angleToAxis, 1) + "°", "67.5° − θ"],
+      ["Focus electrode tip (z, r)", fmt(tb.bfeTip[0], 2) + ", " + fmt(tb.bfeTip[1], 2) + " mm", "highest point of V = 0"],
+      ["Anode face top (z, r)", fmt(tb.anodeTop[0], 2) + ", " + fmt(tb.anodeTop[1], 2) + " mm", "highest point of V = Va"],
+      ["Anode sphere radius R_a", fmt(tb.Ra, 3) + " mm", "Langmuir–Blodgett, 14.665"],
+    ] : [["Tiwary & Basu", "—", "no electrode for these inputs"]];
+    $("bfe-rows").innerHTML = brows.map(function (r) {
+      return '<div class="row"><span class="k">' + esc(r[0]) + ' <small class="muted">' +
+             esc(r[2]) + '</small></span><span class="v">' + esc(r[1]) + "</span></div>";
+    }).join("");
+
     /* ---- comparison with the classical methods ---- */
     var cmp = $("compare-body");
     if (known) {

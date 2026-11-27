@@ -183,21 +183,24 @@
   /* Vedant's get_design_params_mode1 on its default path (no prompts). r holds
      the synthesis result with lengths in mm. Throws an Error with his reason when
      a default is not admissible -- the same cases his code refuses. */
-  function designParams(r) {
+  function designParams(r, opts) {
+    opts = opts || {};
     var Rc = r.Rc_mm, Ra = r.Ra_mm, rc = r.rc_mm, ra = r.ra_mm, za = r.za_mm, zw = r.zw_mm;
     var zac = Rc - Ra, thR = r.theta * DEG2RAD, thTR = r.thetaT * DEG2RAD, RcT = r.RcT_mm;
     var Dz = RcT * (1 - Math.cos(thTR)) - Rc * (1 - Math.cos(thR));
-    var Hz = 0.05, Hr = 0.05, d = 0.2, l = 0.0;
+    // Vedant's defaults; opts.H, opts.d and opts.psi replace them exactly as
+    // answers to his prompts (H_z, H_r, d) and his PIERCE_ANGLE would.
+    var Hz = opts.H || 0.05, Hr = opts.H || 0.05, d = opts.d || 0.2, l = 0.0;
     var sinT = Math.sin(thTR), thDeg = thTR * RAD2DEG;
     var k1max = roundTo(0.99 - sinT, 4), k1 = 0.02;
     if (k1 > k1max) throw new Error("k1 = 0.02 exceeds its limit " + k1max);
     var sinD = sinT + k1, delta = Math.asin(sinD);
     var psiLo = thDeg + 1.0, psiHi = Math.min(89.5, 90.0 + thDeg - delta * RAD2DEG - 0.5);
     if (psiLo >= psiHi) throw new Error("k1 leaves no valid electrode angle");
-    var psi = 67.5;
+    var psi = opts.psi || 67.5;
     if (!(psiLo <= psi && psi <= psiHi)) {
       throw new Error(psi < psiLo
-        ? "theta_T = " + thDeg.toFixed(2) + " deg is too large for a 67.5 deg focus electrode"
+        ? "theta_T = " + thDeg.toFixed(2) + " deg is too large for a " + psi + " deg focus electrode"
         : "k1 starts the electrode too far round the cathode sphere");
     }
     var slope = Math.tan(psi * DEG2RAD - thTR);

@@ -1,0 +1,45 @@
+{
+  "method": "secant on psi, PIERCE in the loop, target = design current",
+  "converged": true,
+  "psi_deg": 57.084,
+  "variant": "tuned_psi_57.084",
+  "history": [
+    {
+      "psi_deg": 57.5,
+      "current_A": 121.2308
+    },
+    {
+      "psi_deg": 62.5,
+      "current_A": 136.0382
+    },
+    {
+      "psi_deg": 57.084,
+      "current_A": 120.1875
+    }
+  ],
+  "compare": {
+    "design_current_A": 120.0,
+    "sim_current_A": 120.1875,
+    "current_err_pct": 0.15624999999999112,
+    "design_microperveance": 2.0655911179772892,
+    "sim_microperveance": 2.069,
+    "intercepted_A": 0.0,
+    "transmission_pct": 100.0,
+    "design_throw_mm": 77.80673654026418,
+    "sim_throw_mm_pierce": 91.5,
+    "sim_throw_mm_refined": 94.9218919505316,
+    "throw_err_pct": 21.99700973374008,
+    "design_waist_mm": 9.8,
+    "sim_waist_mm_pierce": 6.44014,
+    "sim_waist_mm_refined": 6.401591165072983,
+    "waist_err_pct": -34.67764117272467,
+    "waist_inside_domain": true,
+    "converged": true,
+    "iterations": 20,
+    "wall_seconds": 58.178401470184326,
+    "n_trajectories": 58,
+    "lost_in_gun": 0,
+    "lost_after_waist": 0,
+    "lost_in_gun_at_mm": []
+  }
+}

@@ -264,3 +264,17 @@ untouched. Our network reproduces his forward pass with his trained weights
 (re-created by executing his cells on `data/raw/ann_testing_original.csv`) to
 1e-14: `tests/test_satwik_equivalence.py`. His sheet carries the case-11 typo
 noted above; the equivalence test uses his sheet as he did.
+
+---
+
+## Focus-electrode papers and sir's simulator (added 2026-11-20)
+
+| Item | What it is | Where | Used for |
+|---|---|---|---|
+| Tiwary U., Basu B.N., "Noniterative synthesis of convergent Pierce electron guns by the conformal mapping of electrode shapes using logarithmic transformation", *IEEE Trans. Electron Devices* 35(7) (1988) 1184–1187 | Focus electrode and anode as equipotentials of the ideal flow | `data/raw/Noniterative_synthesis_of_convergent_Pierce_electron_guns_by_the_conformal_mapping_of_electrode_shapes_using_logarithmic_transformation.pdf` | `src/physics/bfe.py`; Fig. 2 reproduced |
+| Gao H., Ding G., Zhou X. et al., "Numerical study for the effect of angle between inner wall of Wehnelt electrode and its axis on beam dynamics in a thermionic electron gun", *AIP Advances* 15, 015030 (2025), doi:10.1063/5.0240111, CC BY 4.0 | COMSOL sweep of the focus-electrode angle | `data/raw/015030_1_5.0240111.pdf` | the angle sweep and tuning in PIERCE |
+| Dr. Lalit Kumar, LKTRON PIERCE (`target.exe`, version 29 Oct 2026), with `pierce_plotter.py` and `new3d.py` | Self-consistent gun simulator | `simulation/lktron/` (binary git-ignored) | `src/sim`; reference run in `simulation/lktron/reference_ceeri/` |
+
+The IEEE paper is a licensed download (BITS Pilani, IEEE Xplore). Its PDF is kept
+locally at that path but git-ignored, because the repository is public; the AIP
+paper is CC BY and is committed.

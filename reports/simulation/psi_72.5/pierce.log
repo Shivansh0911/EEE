@@ -1,0 +1,166 @@
+
+          ____________________________________________________
+          *                                                *
+          *                  L K T R O N                   *
+          *                                                *
+          *                  P I E R C E                   *
+          *               Ver: 29 Oct, 2026                *
+          *           @Copyright Dr.LALIT kUMAR            *
+          ___________________________________________________ 
+ DATE:20261120TIME:092116.630
+ DATA INPUT FROM PIERCE.IN
+         PIERCE GUN PSI_72.5                                                                                 
+ BOUND READ
+ CONTROL READ PROBLEM OPTION:           2
+ PRINT CONTROL DATA READ
+ PLOT CONTROL DATA READ
+ GEOMETRY DATA READ
+  NORMALISATION FACTORS CALCULATED
+  CATHODE DATA READ
+ COLLECTOR TRAJECTORY DATA READ
+ ZEROTH ORDER BOUNDARY DONE
+ TAG ENDED
+ NODE POINTS TAGGED
+ FIRST ORDER BOUNDARY APPROXIMATION STARTS
+ FIRST ORDER  BOUNDARY FOR 5-POINT FDM COMPLETED
+ FIRST ORDER BOUNDARY
+  POTENTIAL AT BOUNDARY POINTS
+ NEUMAN: NNEU           2
+ NEUMAN:           1           2          57           2          57
+ NEUMAN:           2          50          98         108          98
+ NEUMAN BOUNDARIES IDENTIFIED
+  MAIN IOPT =            2
+  FIND_NTRAJ, MTRAJ         165
+        RADIUS OF CURVATURE OF CATHODE                    = 51.9300mm
+        RADIUS OF CATHODE DISC                            = 27.6400mm
+        DISTANCE FROM CATHODE FOR CHILD"S LAW APPLICATION =  2.0000mm
+
+        TOTAL AREA OF CATHODE                             =  0.2574E-02SQ. METERS
+        NUMBER OF TRAJECTORIES                            =    58
+        WIDTH OF EACH SEGMENT                             =  0.1675mm
+
+
+
+        VIRTUAL ANODE POSITION:
+        COORD. OF  POINTS OF EMISSION LAW APPLICATION
+        S.No.       Z             R          POTENTIAL          ,Uz          Ur
+     MAJOR  MINOR    POTENTIAL  OMEGA  CONV.    CURRENT (A)     MICROPERV.   DEL  BETA
+     ITER.  ITER.    ERROR
+
+        1  1569     0.160E-02 1.375    1 -1     0.4456E+03    0.7670E+01  0.20  0.60
+        2  1629     0.318E-04 1.375    1 -1     0.4094E+03    0.7047E+01  0.20  0.60
+        3  1476     0.509E-04 1.375    1 -1     0.3152E+03    0.5425E+01  0.20  0.60
+        4  1458     0.293E-04 1.375    1 -1     0.2354E+03    0.4052E+01  0.20  0.60
+        5  1438     0.107E-04 1.375    1 -1     0.1864E+03    0.3209E+01  0.20  0.60
+        6  1412     0.109E-05 1.375    1 -1     0.1633E+03    0.2811E+01  0.20  0.60
+        7  1393     0.630E-05 1.375    1 -1     0.1563E+03    0.2690E+01  0.20  0.60
+        8  1370     0.730E-05 1.375    1 -1     0.1571E+03    0.2704E+01  0.20  0.60
+        9  1348     0.590E-05 1.375    1 -1     0.1603E+03    0.2759E+01  0.20  0.60
+       10  1325     0.425E-05 1.375    1 -1     0.1632E+03    0.2810E+01  0.20  0.60
+       11  1303     0.281E-05 1.375    1 -1     0.1651E+03    0.2842E+01  0.20  0.60
+       12  1277     0.201E-05 1.375    1 -1     0.1660E+03    0.2857E+01  0.20  0.60
+       13  1255     0.163E-05 1.375    1 -1     0.1663E+03    0.2862E+01  0.20  0.60
+
+     ITERATION NO. 14    CONVERGENCE (-1=NO,1=YES) =  1
+       14  1233     0.160E-05 1.375    1  1     0.1662E+03    0.2861E+01  0.20  0.60
+       15  1211     0.165E-05 1.375    1 -1     0.1661E+03    0.2859E+01  0.20  0.60
+       16  1189     0.181E-05 1.375    1 -1     0.1660E+03    0.2858E+01  0.20  0.60
+
+     ITERATION NO. 17    CONVERGENCE (-1=NO,1=YES) =  1
+       17  1166     0.192E-05 1.375    1  1     0.1660E+03    0.2858E+01  0.20  0.60
+
+     ITERATION NO. 18    CONVERGENCE (-1=NO,1=YES) =  1
+       18  1144     0.190E-05 1.375    1  1     0.1660E+03    0.2858E+01  0.20  0.60
+
+     ITERATION NO. 19    CONVERGENCE (-1=NO,1=YES) =  1
+       19  1122     0.193E-05 1.375    1  1     0.1660E+03    0.2858E+01  0.20  0.60
+
+     ITERATION NO. 20    CONVERGENCE (-1=NO,1=YES) =  1
+       20  1099     0.196E-05 1.375    1  1     0.1661E+03    0.2859E+01  0.20  0.60
+
+
+          BEAM EDGE PROFILE DATA:
+                         Z          R
+                     8.00000     27.50092
+                    15.00000     23.84154
+                    22.00000     20.91390
+                    29.00000     18.39630
+                    36.00000     16.36040
+                    43.00000     14.50091
+                    50.00000     13.69685
+                    57.00000     12.80230
+                    64.00000     12.66166
+                    71.00000     12.61900
+                    78.00000     12.66740
+                    85.00000     12.80507
+                    92.00000     12.64063
+                    99.00000     12.94172
+                   106.00000     12.91888
+                   113.00000     13.00814
+                   120.00000     12.74761
+                   127.00000     12.87868
+                   134.00000     12.64961
+                   141.00000     12.91286
+                   148.00000     12.41257
+                   155.00000     12.24950
+
+     BEAM THROW FROM CATHODE: 155.00000mm.
+     BEAM WAIST RADIUS      :  12.24950mm
+
+
+
+     **********************************************************
+     *                         PIERCE                         *
+     **********************************************************
+     *                  ELECTRON BEAM ANALYSIS                *
+     **********************************************************
+  Current Balance : 
+  Cathode Current                    =    166.0857 A
+  Beam Current                       =     26.2304 A
+  Distribution of Electron Trajectories/Current: 
+  Total No. of Trajectories          =  58
+  Total Number of Accounted Trajectories =          58
+ ---------------------------------------------------------------------
+  Electrode  Potential V  No. of Traj.  Intercepted Current A
+ ---------------------------------------------------------------------
+     1        0.000         0         0.0000
+     2   150000.000        32       139.8554
+ ---------------------------------------------------------------------
+ EQUIPOTENTIAL LINE CALCULATION
+
+
+     EQUIPOTENTIAL LINES :
+ START POINT 2 II, POT,ZP,R           3  0.10000000000000001       0.72085784897194527       0.10000000000000001     
+     EQPOT: STARTING POINT NOT FOUND 0.1000E+00
+  K, I, V(I,1) DIF1,DIF2           1           2   0.0000000000000000      -0.12638996183627280       0.10000000000000001     
+ START POINT 2 II, POT,ZP,R           3  0.20000000000000001       0.94171569794389065       0.10000000000000001     
+     EQPOT: STARTING POINT NOT FOUND 0.2000E+00
+  K, I, V(I,1) DIF1,DIF2           2           2   0.0000000000000000       -2.6389961836272791E-002  0.20000000000000001     
+     LINE: 1    POINTS:    37  ZI :  1.1298    RI :  0.1000ZF:  1.0025    RF :  3.6969   NORM.POT:  0.3000E+00
+     LINE: 2    POINTS:    54  ZI :  1.3061    RI :  0.1000ZF:  1.0006    RF :  5.3847   NORM.POT:  0.4000E+00
+ EQUIPOTENTIAL NOT FOUND          31   1.50383437       7.00189495      0.486707926    
+     LINE: 3    POINTS:    71  ZI :  1.4824    RI :  0.1000ZF:  1.4045    RF :  6.9883   NORM.POT:  0.5000E+00
+     LINE: 4    POINTS:   277  ZI :  1.6345    RI :  0.1000ZF:  8.3326    RF : 26.4328   NORM.POT:  0.6000E+00
+     LINE: 5    POINTS:   301  ZI :  1.7840    RI :  0.1000ZF:  9.7892    RF : 28.4337   NORM.POT:  0.7000E+00
+     LINE: 6    POINTS:   307  ZI :  1.9335    RI :  0.1000ZF: 10.3562    RF : 28.9452   NORM.POT:  0.8000E+00
+     LINE: 7    POINTS:   313  ZI :  2.0742    RI :  0.1000ZF: 10.8850    RF : 29.4302   NORM.POT:  0.9000E+00
+     LINE: 8    POINTS:   342  ZI :  2.2080    RI :  0.1000ZF: 13.0703    RF : 31.4692   NORM.POT:  0.1000E+01
+     LINE: 9    POINTS:   433  ZI :  3.4232    RI :  0.1000ZF: 20.6290    RF : 37.9461   NORM.POT:  0.2000E+01
+     LINE:10    POINTS:   548  ZI :  4.4587    RI :  0.1000ZF: 24.7475    RF : 48.4565   NORM.POT:  0.3000E+01
+     LINE:11    POINTS:   543  ZI :  5.3810    RI :  0.1000ZF: 24.9853    RF : 48.4271   NORM.POT:  0.4000E+01
+     LINE:12    POINTS:   539  ZI :  6.2245    RI :  0.1000ZF: 25.2193    RF : 48.4191   NORM.POT:  0.5000E+01
+     LINE:13    POINTS:   536  ZI :  7.0103    RI :  0.1000ZF: 25.4587    RF : 48.4576   NORM.POT:  0.6000E+01
+     LINE:14    POINTS:   533  ZI :  7.7424    RI :  0.1000ZF: 25.6987    RF : 48.4527   NORM.POT:  0.7000E+01
+     LINE:15    POINTS:   530  ZI :  8.4379    RI :  0.1000ZF: 25.9408    RF : 48.4165   NORM.POT:  0.8000E+01
+     LINE:16    POINTS:   528  ZI :  9.0975    RI :  0.1000ZF: 26.2080    RF : 48.4524   NORM.POT:  0.9000E+01
+     LINE:17    POINTS:   526  ZI :  9.7276    RI :  0.1000ZF: 26.4517    RF : 48.4655   NORM.POT:  0.1000E+02
+     LINE:18    POINTS:   513  ZI : 14.9976    RI :  0.1000ZF: 28.9648    RF : 48.4978   NORM.POT:  0.2000E+02
+     LINE:19    POINTS:   507  ZI : 19.2085    RI :  0.1000ZF: 31.6312    RF : 48.4654   NORM.POT:  0.3000E+02
+     LINE:20    POINTS:   505  ZI : 22.8941    RI :  0.1000ZF: 34.4593    RF : 48.4541   NORM.POT:  0.4000E+02
+     LINE:21    POINTS:   506  ZI : 26.3130    RI :  0.1000ZF: 37.4363    RF : 48.4699   NORM.POT:  0.5000E+02
+     LINE:22    POINTS:   510  ZI : 29.6663    RI :  0.1000ZF: 40.5454    RF : 48.4906   NORM.POT:  0.6000E+02
+     LINE:23    POINTS:   518  ZI : 33.1928    RI :  0.1000ZF: 43.7680    RF : 48.4580   NORM.POT:  0.7000E+02
+     LINE:24    POINTS:   535  ZI : 37.3403    RI :  0.1000ZF: 47.0695    RF : 48.4203   NORM.POT:  0.8000E+02
+     LINE:25    POINTS:   578  ZI : 43.5764    RI :  0.1000ZF: 50.3851    RF : 48.4635   NORM.POT:  0.9000E+02
+  AUXPLT CALLED
+ ***************************PIERCE : PROBLEM RUNENDS* ********************

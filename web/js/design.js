@@ -15,6 +15,7 @@
 
   var D = window.EGUN_DATA || {};
   var CL = window.EGUN.closure;
+  var PI = window.EGUN.pierce;
   var $ = function (id) { return document.getElementById(id); };
   var SVGNS = "http://www.w3.org/2000/svg";
   var current = null;
@@ -74,7 +75,8 @@
       $("ds-measured").textContent = "";
       $("ds-rows").innerHTML = "";
       clearSvg();
-      setDeck({ refused: "design is infeasible: " + r.reason });
+      var no = { refused: "design is infeasible: " + r.reason };
+      setDeck(no, no);
       out.innerHTML = msg("bad", "<strong>No Pierce gun exists for these inputs.</strong> " +
         esc(r.reason) + ". (μP = " + fmt(r.muP, 3) + ", C = " + fmt(r.C, 2) + ")");
       return;
@@ -120,24 +122,35 @@
     }).join("");
 
     var dk = CL.deck(r);
-    setDeck(dk);
-    draw(r, dk);
+    var elec = $("ds-elec").value;
+    $("ds-psi-wrap").hidden = elec !== "vedant";
+    var pd = PI.pierceDeck(r, { electrodes: elec, psi: parseFloat($("ds-psi").value) || 67.5,
+                                anodeShift: parseFloat($("ds-shift").value) || 0 });
+    setDeck(dk, pd);
+    draw(r, pd);
   }
 
-  function setDeck(dk) {
-    var btn = $("ds-deck"), note = $("ds-deck-note");
-    btn.disabled = !dk.text;
-    note.textContent = dk.text ? "Vedant's EGUN point deck (his construction, default " +
-      "parameters: k1 0.02, d 0.2 mm, H 0.05 mm). Re-check with his exact solver: " +
-      "python -m src.moo.deck --V … --I … --rw … --Jc …" : "No deck: " + dk.refused;
-    btn.onclick = function () {
-      var blob = new Blob([dk.text], { type: "text/plain" });
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "pierce_gun_points.txt";
-      a.click();
-      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-    };
+  function download(text, name) {
+    var blob = new Blob([text], { type: "text/plain" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  function setDeck(dk, pd) {
+    $("ds-pdeck").disabled = !pd.text;
+    $("ds-deck").disabled = !dk.text;
+    $("ds-pdeck").onclick = function () { download(pd.text, "pierce.in"); };
+    $("ds-deck").onclick = function () { download(dk.text, "pierce_gun_points.txt"); };
+    $("ds-deck-note").textContent = pd.text
+      ? "pierce.in for Dr. Lalit Kumar's PIERCE (target.exe): put it next to target.exe and run. " +
+        "Grid " + pd.grid + " mm; sir's solver settings; drift tube to 2 x throw so the waist forms " +
+        "inside the domain. The drawing above is exactly this deck. Vedant's original format " +
+        "lacks the closing '/' of &CATHODE and his solver settings, so target.exe stops on it. " +
+        "Run and compare from Python: python -m src.sim.deck --V … --I … --rw … --Jc … --run"
+      : "No PIERCE deck: " + pd.refused;
   }
 
   // ---- drawing --------------------------------------------------------------
@@ -149,51 +162,62 @@
     return e;
   }
 
-  function draw(r, dk) {
+  /* Draw the PIERCE deck rows themselves: what is drawn is what is simulated.
+     Row codes: 1 straight to the next row, 0 circular arc (cathode), -1 gap. */
+  function draw(r, pd) {
     clearSvg();
     var svg = $("ds-svg"), W = 640, H = 300, pad = 24;
+    if (!pd.rows) {
+      svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+      $("ds-caption").textContent = "No drawing: " + pd.refused;
+      return;
+    }
+    var rows = pd.rows;
+    var zMax = Math.max.apply(null, rows.map(function (p) { return p.z; }));
+    var rMax = Math.max.apply(null, rows.map(function (p) { return p.r; })) * 1.06;
+    H = Math.max(140, Math.min(360, Math.round((W - 2 * pad) * rMax / zMax) + 2 * pad));
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
-    var d = 0.2, Dz = dk.params ? dk.params.Dz : 0;
-    var zMax = dk.points ? dk.points[14][2] : d + 1.3 * r.zw_mm;
-    var rMax = dk.points ? dk.points[7][3] * 1.08 : 1.8 * r.rc_mm;
     var s = Math.min((W - 2 * pad) / zMax, (H - 2 * pad) / rMax);
     var X = function (z) { return pad + z * s; }, Y = function (rr) { return H - pad - rr * s; };
     el("line", { x1: X(0), y1: Y(0), x2: X(zMax), y2: Y(0), class: "ds-axis" }, svg);
 
-    // beam edge: from the cathode rim, converging on the cathode's centre of
-    // curvature (theta_raw cone) to the anode, then out to the waist
-    var thR = r.theta * Math.PI / 180, zv = d + Dz, beam = [];
-    var zRim = d + (dk.points ? dk.points[2][2] - d : r.RcT_mm * (1 - Math.cos(r.thetaT * Math.PI / 180)));
-    beam.push([zRim, r.rc_mm]);
-    var zA = zv + (r.za_valid ? r.za_mm : r.zac_mm);
-    beam.push([zA, r.rb_za_mm]);
-    beam.push([d + r.zw_mm, r.rw_mm]);
+    // schematic beam edge: rim -> anode plane (theta_raw cone) -> waist
+    var d = rows[0].z, rim = rows[1];
+    var zA = rim.z + (r.za_valid ? r.za_mm : r.zac_mm) - (rim.z - d);
+    var beam = [[rim.z, r.rc_mm], [zA, r.rb_za_mm], [d + r.zw_mm, r.rw_mm]];
     el("polyline", { points: beam.map(function (p) { return X(p[0]) + "," + Y(p[1]); }).join(" "),
                      class: "ds-beam" }, svg);
 
-    if (dk.points) {
-      var P = {}; dk.points.forEach(function (p) { P[p[0]] = [p[2], p[3]]; });
-      var path = function (ids) {
-        return ids.map(function (i) { return X(P[i][0]) + "," + Y(P[i][1]); }).join(" ");
-      };
-      // cathode arc 1 -> 2, built with RcT, theta_T
-      var arc = [], RcT = r.RcT_mm, thT = r.thetaT * Math.PI / 180;
-      for (var k = 0; k <= 40; k++) {
-        var ph = thT * k / 40;
-        arc.push(X(d + RcT - RcT * Math.cos(ph)) + "," + Y(RcT * Math.sin(ph)));
-      }
-      el("polyline", { points: arc.join(" "), class: "ds-cathode" }, svg);
-      el("polyline", { points: path([2, 3, 4, 5, 6, 7]), class: "ds-electrode" }, svg);
-      el("polyline", { points: path([8, 9, 10, 11, 12, 13, 14]), class: "ds-anode" }, svg);
-    }
-    var lab = function (z, rr, t) {
-      var e = el("text", { x: X(z), y: Y(rr) - 6, class: "ds-label" }, svg);
-      e.textContent = t;
+    var seg = [], cls = null;
+    var flush = function () {
+      if (seg.length > 1) el("polyline", { points: seg.join(" "), class: cls }, svg);
+      seg = [];
     };
-    lab(d + r.zw_mm, r.rw_mm, "waist");
-    $("ds-caption").textContent = "Half cross-section, to scale (" + fmt(zMax, 1) +
-      " mm long). Electrodes are Vedant's 15-point construction; the beam edge is a " +
-      "schematic of the θ_raw cone and the drift to the waist, not a trajectory solve.";
+    for (var i = 0; i < rows.length - 1; i++) {
+      var p = rows[i], q = rows[i + 1];
+      if (p.code === -1) { flush(); continue; }
+      var c = p.code === 0 ? "ds-cathode" : (p.volt > 0 || q.volt > 0 ? "ds-anode" : "ds-electrode");
+      if (c !== cls) { flush(); cls = c; }
+      if (!seg.length) seg.push(X(p.z) + "," + Y(p.r));
+      if (p.code === 0) {                       // arc about (zc, 0), radius rad
+        var a0 = Math.atan2(p.r, p.zc - p.z), a1 = Math.atan2(q.r, p.zc - q.z);
+        for (var k = 1; k <= 40; k++) {
+          var ph = a0 + (a1 - a0) * k / 40;
+          seg.push(X(p.zc - p.rad * Math.cos(ph)) + "," + Y(p.rad * Math.sin(ph)));
+        }
+      } else {
+        seg.push(X(q.z) + "," + Y(q.r));
+      }
+    }
+    flush();
+    var t = el("text", { x: X(d + r.zw_mm), y: Y(r.rw_mm) - 6, class: "ds-label" }, svg);
+    t.textContent = "designed waist";
+    $("ds-caption").textContent = "Half cross-section, to scale (" + fmt(zMax, 1) + " mm long), " +
+      "drawn from the PIERCE deck rows. " + ($("ds-elec").value === "tiwary-basu"
+        ? "Focus electrode and anode face are the V = 0 and V = Va equipotentials of Tiwary & " +
+          "Basu (1988), cut at their highest point; cathode at R_c, θ_raw (the ideal flow)."
+        : "Vedant's construction: cathode built with R_cT, θ_T; straight focus electrode at ψ to " +
+          "the beam edge.") + " The dashed beam edge is a schematic, not a trajectory solve.";
   }
 
   // ---- Pareto via API, with a fallback -------------------------------------
@@ -280,6 +304,10 @@
       row.appendChild(b);
     });
     FIELDS.forEach(function (f) { $(f[1]).addEventListener("input", update); });
+    ["ds-elec", "ds-psi", "ds-shift"].forEach(function (id) {
+      $(id).addEventListener("input", update);
+      $(id).addEventListener("change", update);
+    });
     var sel = $("ds-study");
     Object.keys(D.pareto || {}).forEach(function (k) {
       var o = document.createElement("option"); o.value = k; o.textContent = D.pareto[k].title;
