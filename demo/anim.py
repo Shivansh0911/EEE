@@ -96,3 +96,66 @@ def trajectory_animation(run_dir, title, info_lines, design_A=120.0):
             yield img
 
     return factory
+
+
+def sweep_flipbook(steps, title, hold=1.0):
+    """
+    One target.exe run after another on a fixed scale, so what changes between
+    runs (the anode moving, the cathode's curvature) is seen moving.
+    steps: list of (run_dir, label, focus_mm or None, aim_mm or None, info_line).
+    Electrons that stop before the end wall and before the focus (hitting the
+    gun) are ringed in orange.
+    """
+    runs = []
+    for run_dir, label, focus, aim, line in steps:
+        p = lk.parse_plt(f"{run_dir}/pierce.plt")
+        runs.append((p[1], p[2], p[3], label, focus, aim, line))
+    zmax = max(p[0] for r in runs for s in r[0] for p in s)
+    rmax = max(p[1] for r in runs for s in r[0] for p in s)
+    area = (24, 70, W - 24, H - CAP_H - 70)
+    k = min((area[2] - area[0]) / zmax, (area[3] - area[1]) / rmax)
+    ox = area[0] + ((area[2] - area[0]) - zmax * k) / 2
+    oy = area[1] + rmax * k
+    P = lambda z, r: (ox + z * k, oy - r * k)
+
+    def frame(i):
+        bnd, trj, eqp, label, focus, aim, line = runs[i]
+        img = Image.new("RGB", (W, H), BG)
+        d = ImageDraw.Draw(img)
+        d.text((24, 14), title, font=F(SANS_B, 24), fill=INK)
+        d.text((24, 44), label, font=F(MONO, 20), fill=ACC)
+        d.rectangle([ox - 6, area[1] - 6, ox + zmax * k + 6, oy + 6], fill=PLOT_BG)
+        for s in eqp:
+            if len(s) > 1:
+                d.line([P(*p) for p in s], fill=(44, 160, 44), width=1)
+        for s in trj:
+            if len(s) > 1:
+                d.line([P(*p) for p in s], fill=(214, 39, 40), width=1)
+        for s in bnd:
+            if len(s) > 1:
+                d.line([P(*p) for p in s], fill=(0, 0, 0), width=3)
+        zc = min((p[0] for s in bnd for p in s if p[1] < 0.02 * rmax), default=0.0)
+        for z, col, txt in ((aim, (31, 119, 180), "aim point (Rc)"), (focus, (148, 103, 189), "focus")):
+            if z is not None and zc + z < zmax:
+                x = P(zc + z, 0)[0]
+                d.line([x, oy + 4, x, oy - rmax * k * 0.55], fill=col, width=2)
+                d.text((x + 5, oy - rmax * k * 0.55 - 20), txt, font=F(SANS, 16), fill=col)
+        zend = max(s[-1][0] for s in trj)
+        cut = zc + focus if focus is not None else math.inf
+        for s in trj:
+            z, r = s[-1]
+            if z < zend - 1 and z < cut:
+                x, y = P(z, r)
+                d.ellipse([x - 6, y - 6, x + 6, y + 6], outline=(255, 127, 14), width=3)
+        d.text((24, H - CAP_H - 50), line, font=F(SANS, 19), fill=INK)
+        return img
+
+    imgs = [frame(i) for i in range(len(runs))]
+
+    def factory(dur):
+        n = int(dur * FPS) + 2
+        per = max(1, n // len(imgs))
+        for i in range(n):
+            yield imgs[min(len(imgs) - 1, i // per)]
+
+    return factory

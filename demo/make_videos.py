@@ -738,6 +738,261 @@ def video7():
     return s.render(os.path.join(OUT, "demoD_our_gun_in_target_exe.mp4"))
 
 
+# =============================================================================
+def _slide(sel, idxs, ms=650):
+    def act(p):
+        for i in idxs:
+            p.evaluate("([s, v]) => { const e = document.querySelector(s); e.value = v; "
+                       "e.dispatchEvent(new Event('input')); }", [sel, i])
+            p.wait_for_timeout(ms)
+    return act
+
+
+def _scroll(sel):
+    def act(p):
+        p.evaluate("(s) => document.querySelector(s).scrollIntoView({block: 'start'})", sel)
+        p.wait_for_timeout(300)
+    return act
+
+
+def _sweep_steps(name, key):
+    """(run_dir, label, focus, aim, info line) for every ok row of one sweep."""
+    data = json.load(open(os.path.join(CLONE, "reports", "simulation", "sweeps", f"{name}.json")))
+    out = []
+    for r in data[key]:
+        if not r["ok"]:
+            continue
+        d = os.path.join(RUNS, "sweeps", name, r["run"])
+        hit = f"{r['lost_in_gun']} electrons hit the gun" if r["lost_in_gun"] else "no electron hits the gun"
+        foc = f"focus {r['throw_mm']:.1f} mm, waist {r['waist_mm']:.2f} mm" if r["throw_mm"] else "no focus"
+        if key == "anode":
+            lab = f"anode shift {r['anode_shift_mm']:+g} mm   (spacing d = {r['cathode_anode_mm']:.2f} mm)"
+            line = (f"microperveance {r['sim_microperveance']:.3f}  (1/d^2 predicts "
+                    f"{r['P_child_1_over_d2']:.3f})   {foc}   {hit}")
+            aim = None
+        else:
+            lab = f"cathode Rc = {r['RcT_mm']:.1f} mm   (beam angle {r['thetaT_deg']:.1f} deg)"
+            line = f"aim point {r['aim_point_mm']:.1f} mm   {foc}   {hit}"
+            aim = r["aim_point_mm"]
+        out.append((d, lab, r["throw_mm"], aim, line))
+    return data, out
+
+
+def video8():
+    """C1: the complete website (our gun, Tiwary-Basu electrode, simulations, data, results)."""
+    s = Scenes(WORK, "v8")
+    s.card("Optimisation of a convergent electron gun using an ANN: the complete website",
+           "Neural network for the beam angle -> Pierce gun synthesis -> Tiwary & Basu focus "
+           "electrode -> simulation in target.exe. EEE F266: Shivansh Shekher Ojha, Satwik "
+           "Shrivastava; supervisor Dr. Lalit Kumar.",
+           "This is the complete project, on our website. A neural network gives the beam angle, "
+           "the Pierce gun is synthesised around it, the beam focusing electrode comes from Tiwary "
+           "and Basu, and every gun is checked in sir's simulator, target dot exe.",
+           kicker="Demo C1")
+    s.terminal(rec("v1_train"),
+               "The network is trained from scratch: the paper's three, three, two, one network, "
+               "Levenberg Marquardt, on twenty three real guns. On the seven held out guns the error "
+               "is seven point nine three percent.", title="python -m src.ann.train --model m1")
+
+    def gun1(p):
+        slow_fill(p, "#in-P", "2", 40)
+        slow_fill(p, "#in-rw", "1.5", 40)
+        slow_fill(p, "#in-C", "40", 40)
+        highlight(p, ".readout")
+
+    def gun2(p):
+        slow_fill(p, "#in-P", "0.3", 40)
+        slow_fill(p, "#in-rw", "0.62", 40)
+        slow_fill(p, "#in-C", "207.6", 40)
+        highlight(p, "#bfe-card")
+
+    s.browser(URL + "#predict", [
+        ("Predict tab. Perveance two, waist one point five millimetres, convergence forty: the "
+         "network gives a half beam cone angle of forty point nine degrees.", gun1),
+        ("Our Pierce gun, drawn from that angle: the cathode, the anode and the beam converging to "
+         "its waist.", lambda p: highlight(p, "#gun-svg")),
+        ("The geometry that follows: cathode radius, radius of curvature, the anode and the "
+         "spacing.", lambda p: highlight(p, "#geom-rows")),
+        ("The beam focusing electrode by Tiwary and Basu: the zero volt equipotential of the ideal "
+         "flow, drawn for this gun.", lambda p: highlight(p, "#bfe-svg")),
+        ("It leaves the cathode at sixty seven point five degrees to the beam edge, here twenty six "
+         "point six degrees to the axis.", lambda p: highlight(p, "#bfe-rows")),
+        ("Change the inputs and everything updates: a high convergence gun gives twenty eight point "
+         "four degrees.", gun2),
+    ])
+    s.image(os.path.join(REC, "paper1_overlay.png"),
+            "The Tiwary and Basu construction is checked on the paper's own guns: our curves, in "
+            "red, over the paper's figure two.", title="Tiwary & Basu (1988) Fig. 2, our curves in red")
+
+    def rc_mode(p):
+        p.select_option("#sw-gun", "case15")
+        p.click("#sw-mode-rc")
+        _scroll("#sw-gun")(p)
+        _slide("#sw-step", [8, 6, 4, 2, 0], 800)(p)
+
+    s.browser(URL + "#sim", [
+        ("The Simulation tab. Each position of this slider is a real target dot exe run of our gun "
+         "on sir's klystron gun.", _scroll("#sw-gun")),
+        ("Moving the anode towards the cathode draws more current; moving it away draws less, and "
+         "the focus moves down the tube.", _slide("#sw-step", [0, 2, 4, 6, 8, 9], 700)),
+        ("The charts: target dot exe's current follows the one over d squared law near the design "
+         "point.", _scroll("#sw-chart1")),
+        ("Now the cathode's radius of curvature, on a smaller gun from the paper. A flatter cathode "
+         "focuses further away, and at the ends electrons hit the gun, shown in orange.", rc_mode),
+    ])
+    s.browser(URL + "#dataset", [
+        ("The Dataset tab: the real guns from the paper's table two, which the network is trained "
+         "and tested on.", None),
+    ])
+    s.browser(URL + "#results", [
+        ("The Results tab: the benchmark against the paper, and the error on every held out gun. "
+         "The result is a distribution over training runs, not a single number.", None),
+    ])
+    s.card("Summary",
+           "Network angle -> Pierce gun -> Tiwary & Basu focus electrode, in the browser; every gun "
+           "checked in target.exe, with anode shift and cathode curvature studies.",
+           "So the website gives the whole chain: the network's angle, the Pierce gun, the Tiwary "
+           "and Basu beam focusing electrode, and the target dot exe simulations with the anode and "
+           "cathode studies.", kicker="End")
+    return s.render(os.path.join(OUT, "demoC1_complete_website.mp4"))
+
+
+def video9():
+    """D1: our gun in target.exe, plus the anode-shift and cathode-Rc studies and the live run."""
+    import subprocess
+    import time
+    import urllib.request
+    from anim import sweep_flipbook, trajectory_animation
+    from src.sim import lktron as lk
+    og = os.path.join(CLONE, "simulation", "runs", "ourgun")
+    summ = json.load(open(os.path.join(CLONE, "reports", "simulation", "ourgun", "summary.json")))
+    tv = {t["case"]: t["variant"] for t in summ["tuned"]}
+
+    def cur(n):
+        return lk.parse_log(os.path.join(og, n, "pierce.log"))
+
+    s = Scenes(WORK, "v9")
+    s.card("Our gun in sir's PIERCE (target.exe): simulation, anode shift, cathode curvature",
+           "Our network's angle + Vaughan's synthesis + Tiwary & Basu's focus electrode, run in "
+           "target.exe; then what happens when the anode moves and when the cathode's radius of "
+           "curvature changes; then a live run from the website.",
+           "This demo runs our gun in sir's simulator, target dot exe. Then it shows what happens "
+           "when the anode moves, and when the cathode's radius of curvature changes. Finally, a "
+           "live run from the website on this computer.", kicker="Demo D1")
+    s.terminal(rec("v5_reference"),
+               "First, a check: sir's own deck, run through our code, reproduces his result exactly, "
+               "one hundred twenty one point seven four amps.", title="python demo/run_reference.py")
+    s.terminal(rec("v7_ourgun"),
+               "Our gun on sir's klystron gun and on the paper's seven held out guns. Untuned, it "
+               "draws three to fifty six percent more current than designed. With the anode tuned by "
+               "target dot exe in the loop, five guns match the design within about one percent.",
+               title="python -m src.sim.ourgun --tune")
+    sg = cur("sir_gun")
+    s.frames(trajectory_animation(os.path.join(og, "sir_gun"), "target.exe: our gun on sir's klystron gun",
+                                  [f"current {sg['cathode_current_A']:.1f} A (design 120 A)",
+                                   "focus electrode: Tiwary & Basu curve"]),
+             f"Our gun on sir's klystron gun: {sg['cathode_current_A']:.1f} amps against one hundred "
+             "twenty designed, and no electron hits the gun.", min_dur=8)
+    t15 = cur(tv["case15"])
+    s.frames(trajectory_animation(os.path.join(og, tv["case15"]),
+                                  "target.exe: paper case 15 after tuning the anode (+1.10 mm)",
+                                  [f"current {t15['cathode_current_A'] * 1000:.1f} mA, design "
+                                   f"{1.01e-6 * 1e4 ** 1.5 * 1000:.1f} mA"]),
+             "Paper case fifteen, after moving the anode one point one millimetres: the current "
+             "matches the design within zero point two percent.", min_dur=7)
+
+    # --- the new studies ---------------------------------------------------------
+    s.card("What happens when the anode moves, and when the cathode's curvature changes",
+           "Anode shift: the anode is moved along the axis, -4 to +6 mm; the cathode-anode spacing "
+           "d changes, and the current should follow 1/d^2 (and Langmuir-Blodgett). Cathode Rc: the "
+           "radius of curvature is changed at the same cathode disc and perveance; the anode is "
+           "re-placed by the Langmuir-Blodgett equation. 19 target.exe runs per gun.",
+           "Next, sir's questions. What happens when the anode moves? The spacing d changes, so "
+           "the current should follow one over d squared. And what happens when the cathode's "
+           "radius of curvature changes? The beam aims at a different point, so where it focuses, "
+           "and where electrons may hit, changes.", kicker="Parametric study")
+    s.terminal(rec("v8_sweeps"),
+               "Nineteen target dot exe runs of our gun on sir's klystron gun. Moving the anode four "
+               "millimetres closer raises the perveance from two point one three to three point one "
+               "one; six millimetres away lowers it to one point three one. Near the design point "
+               "this follows one over d squared. Changing the cathode's radius of curvature moves "
+               "the waist, and the flattest cathode makes the beam hit the gun.",
+               title="python -m src.sim.sweeps")
+    _, st = _sweep_steps("sir_gun", "anode")
+    s.frames(sweep_flipbook(st, "target.exe: our gun on sir's klystron gun, anode moved"),
+             "Here are those runs, one after another. Watch the anode move: closer draws more "
+             "current, further away draws less and the focus moves down the tube.", min_dur=12)
+    s.image(os.path.join(CLONE, "reports", "figures", "sweep_anode_sir_gun.png"),
+            "The current against the anode shift: target dot exe in blue, one over d squared in "
+            "grey, Langmuir Blodgett in orange. Then where the beam focuses, and its waist.",
+            title="Anode shift: current, focus point, waist")
+    _, st = _sweep_steps("case15", "rc")
+    s.frames(sweep_flipbook(list(reversed(st)),
+                            "target.exe: paper case 15, cathode radius of curvature changed"),
+             "Now the cathode's radius of curvature, on paper case fifteen. As the cathode gets "
+             "flatter, its aim point and the real focus both move away, from thirty three to fifty "
+             "two millimetres. At both ends electrons hit the gun, ringed in orange.", min_dur=12)
+    s.image(os.path.join(CLONE, "reports", "figures", "sweep_rc_case15.png"),
+            "Summarised: the focus in target dot exe lies well beyond the aim point, because of the "
+            "beam's own space charge, and it moves with the radius of curvature.",
+            title="Cathode radius of curvature: focus, waist, current")
+    s.terminal(rec("v8_sweeps15"), "The same study on case fifteen, in the terminal.",
+               title="python -m src.sim.sweeps --gun case15")
+
+    # --- live run from the website, served on this computer ------------------------
+    port = 8795
+    log = os.path.join(WORK, "serve_log.txt")
+    srv = subprocess.Popen([sys.executable, "serve_local.py", "--no-browser", "--port", str(port)],
+                           cwd=CLONE, stdout=open(log, "w", encoding="utf-8"), stderr=subprocess.STDOUT,
+                           env=dict(os.environ, PYTHONUNBUFFERED="1", PYTHONWARNINGS="ignore"))
+    try:
+        for _ in range(60):
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{port}/api/status", timeout=1)
+                break
+            except OSError:
+                time.sleep(0.5)
+        s.image(text_image(log, os.path.join(WORK, "serve_banner.png"), "START_HERE.bat"),
+                "For sir's computer: double click start here dot bat. It starts a local server, "
+                "finds target dot exe, and opens this link in the browser.",
+                title="START_HERE.bat")
+
+        def live(p):
+            for k, v in (("#lv-P", "1.2"), ("#lv-rw", "0.76"), ("#lv-C", "111"), ("#lv-V", "10"),
+                         ("#lv-dz", "1.942"), ("#lv-dth", "0")):
+                p.fill(k, v)
+                p.wait_for_timeout(150)
+            _scroll("#live-card")(p)
+            p.click("#lv-run")
+            p.wait_for_function("document.getElementById('lv-status').textContent.startsWith('Done')"
+                                " || document.getElementById('lv-status').textContent.includes('failed')",
+                                timeout=180000)
+            _scroll("#lv-svg")(p)
+
+        s.browser(f"http://127.0.0.1:{port}/#sim", [
+            ("Served this way, the Simulation tab gets one more panel: run our gun in target dot exe, "
+             "now.", _scroll("#live-card")),
+            ("Paper case twelve, with the anode moved one point nine four millimetres. Press run: the "
+             "website builds our gun and runs target dot exe on this computer.", live),
+            ("Done in seconds. The trajectories, the focus and the perveance, within half a percent "
+             "of the design. All of target dot exe's files are kept, for sir's own plotters.",
+             lambda p: p.wait_for_timeout(500)),
+        ])
+    finally:
+        srv.terminate()
+    s.card("Summary",
+           "Our gun runs in target.exe: untuned +3 % to +56 % current; anode tuned in the loop, 5 "
+           "guns within 1.3 %. Moving the anode: current follows 1/d^2 near the design; focus and "
+           "waist move with it. Cathode Rc: the focus follows the curvature, well beyond the aim "
+           "point; too flat or too curved and electrons hit the gun. Low-convergence guns fail.",
+           "In short: our gun runs in sir's simulator, and the anode tuned in the loop brings five "
+           "guns within about one percent. Moving the anode changes the current as one over d "
+           "squared, and moves the focus. The cathode's curvature moves the focus too, and at the "
+           "extremes electrons hit the gun. And sir can run all of this himself with one double "
+           "click.", kicker="End")
+    return s.render(os.path.join(OUT, "demoD1_our_gun_target_exe_sweeps.mp4"))
+
+
 if __name__ == "__main__":
     for k in WHICH:
-        print("built", {"1": video1, "2": video2, "3": video3, "4": video4, "5": video5, "6": video6, "7": video7}[k]())
+        print("built", {"1": video1, "2": video2, "3": video3, "4": video4, "5": video5, "6": video6, "7": video7, "8": video8, "9": video9}[k]())
